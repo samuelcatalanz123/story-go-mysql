@@ -1,0 +1,1 @@
+Soy un desarrollador principiante. ¿Podrías explicarme con detalle cada concepto que estamos desarrollando actualmente?

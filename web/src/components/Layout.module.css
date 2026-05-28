@@ -1,0 +1,28 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+}
+.sidebar {
+  width: 200px;
+  background: #1f2933;
+  padding: 1rem;
+}
+.sidebar h2 {
+  color: #fff;
+  font-size: 1rem;
+}
+.sidebar a {
+  display: block;
+  color: #cbd2d9;
+  text-decoration: none;
+  padding: 0.5rem 0;
+}
+.sidebar a.active {
+  color: #fff;
+  font-weight: bold;
+}
+.content {
+  flex: 1;
+  padding: 1.5rem;
+}

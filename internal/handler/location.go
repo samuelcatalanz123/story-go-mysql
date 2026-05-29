@@ -35,12 +35,12 @@ func (h *LocationHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LocationHandler) List(w http.ResponseWriter, r *http.Request) {
-	locations, err := h.svc.List(r.Context())
+	page, err := h.svc.List(r.Context(), parseListParams(r))
 	if err != nil {
 		web.RespondError(w, locationResource, err)
 		return
 	}
-	web.JSON(w, http.StatusOK, locations)
+	web.JSON(w, http.StatusOK, page)
 }
 
 func (h *LocationHandler) Get(w http.ResponseWriter, r *http.Request) {

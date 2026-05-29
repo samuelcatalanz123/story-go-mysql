@@ -35,12 +35,12 @@ func (h *CharacterHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CharacterHandler) List(w http.ResponseWriter, r *http.Request) {
-	characters, err := h.svc.List(r.Context())
+	page, err := h.svc.List(r.Context(), parseListParams(r))
 	if err != nil {
 		web.RespondError(w, characterResource, err)
 		return
 	}
-	web.JSON(w, http.StatusOK, characters)
+	web.JSON(w, http.StatusOK, page)
 }
 
 func (h *CharacterHandler) Get(w http.ResponseWriter, r *http.Request) {

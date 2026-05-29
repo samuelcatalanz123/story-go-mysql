@@ -35,12 +35,12 @@ func (h *SceneHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SceneHandler) List(w http.ResponseWriter, r *http.Request) {
-	scenes, err := h.svc.List(r.Context())
+	page, err := h.svc.List(r.Context(), parseListParams(r))
 	if err != nil {
 		web.RespondError(w, sceneResource, err)
 		return
 	}
-	web.JSON(w, http.StatusOK, scenes)
+	web.JSON(w, http.StatusOK, page)
 }
 
 func (h *SceneHandler) Get(w http.ResponseWriter, r *http.Request) {

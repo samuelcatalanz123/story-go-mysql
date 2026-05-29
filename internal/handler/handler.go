@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"story-go-mysql/internal/apperror"
+	"story-go-mysql/internal/model"
 	"story-go-mysql/internal/web"
 )
 
@@ -20,4 +21,14 @@ func parseID(w http.ResponseWriter, r *http.Request, resource string) (uint64, b
 		return 0, false
 	}
 	return id, true
+}
+
+// parseListParams reads q/page/pageSize from the query string. Missing or
+// non-numeric page/pageSize stay at 0, which the service normalizes to
+// sensible defaults.
+func parseListParams(r *http.Request) model.ListParams {
+	q := r.URL.Query()
+	page, _ := strconv.Atoi(q.Get("page"))
+	pageSize, _ := strconv.Atoi(q.Get("pageSize"))
+	return model.ListParams{Query: q.Get("q"), Page: page, PageSize: pageSize}
 }

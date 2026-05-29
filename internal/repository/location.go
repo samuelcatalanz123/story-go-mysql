@@ -47,13 +47,14 @@ func (r *LocationRepository) GetByID(ctx context.Context, id uint64) (model.Loca
 	return l, nil
 }
 
-// List returns every location ordered by ID.
-func (r *LocationRepository) List(ctx context.Context) ([]model.Location, error) {
-	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, title, text, created_at, updated_at
-		FROM locations
-		ORDER BY id ASC
-	`)
+// List returns a page of locations matching q, ordered by ID.
+func (r *LocationRepository) List(ctx context.Context, q string, limit, offset int) ([]model.Location, error) {
+	where, args := buildSearch(q)
+	query := "SELECT id, title, text, created_at, updated_at FROM locations " +
+		where + "ORDER BY id ASC LIMIT ? OFFSET ?"
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, translate(err)
 	}
@@ -68,6 +69,16 @@ func (r *LocationRepository) List(ctx context.Context) ([]model.Location, error)
 		locations = append(locations, l)
 	}
 	return locations, rows.Err()
+}
+
+// Count returns the number of locations matching q.
+func (r *LocationRepository) Count(ctx context.Context, q string) (int, error) {
+	where, args := buildSearch(q)
+	var n int
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM locations "+where, args...).Scan(&n); err != nil {
+		return 0, translate(err)
+	}
+	return n, nil
 }
 
 // Update modifies a location. It returns apperror.ErrNotFound when no row

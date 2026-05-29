@@ -81,3 +81,46 @@ type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
 }
+
+// Page is a paginated slice of results returned by list endpoints.
+type Page[T any] struct {
+	Items    []T `json:"items"`
+	Total    int `json:"total"`
+	Page     int `json:"page"`
+	PageSize int `json:"pageSize"`
+}
+
+// Pagination defaults and bounds for list endpoints.
+const (
+	DefaultPageSize = 20
+	MaxPageSize     = 100
+)
+
+// ListParams holds search and pagination parameters for list endpoints.
+type ListParams struct {
+	Query    string
+	Page     int
+	PageSize int
+}
+
+// Normalize clamps the params to safe values: Page >= 1 and PageSize within
+// [1, MaxPageSize] (defaulting to DefaultPageSize). It returns a copy.
+func (p ListParams) Normalize() ListParams {
+	out := p
+	if out.Page < 1 {
+		out.Page = 1
+	}
+	if out.PageSize <= 0 {
+		out.PageSize = DefaultPageSize
+	}
+	if out.PageSize > MaxPageSize {
+		out.PageSize = MaxPageSize
+	}
+	return out
+}
+
+// Limit returns the SQL LIMIT (call after Normalize).
+func (p ListParams) Limit() int { return p.PageSize }
+
+// Offset returns the SQL OFFSET (call after Normalize).
+func (p ListParams) Offset() int { return (p.Page - 1) * p.PageSize }

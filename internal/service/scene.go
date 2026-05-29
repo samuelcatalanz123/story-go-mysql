@@ -56,21 +56,27 @@ func (s *SceneService) Get(ctx context.Context, id uint64) (model.Scene, error) 
 	return s.scenes.GetByID(ctx, id)
 }
 
-// List returns every scene, each populated with its relations.
-func (s *SceneService) List(ctx context.Context) ([]model.Scene, error) {
-	ids, err := s.scenes.ListIDs(ctx)
+// List returns a page of scenes matching the given params, each populated
+// with its relations.
+func (s *SceneService) List(ctx context.Context, params model.ListParams) (model.Page[model.Scene], error) {
+	p := params.Normalize()
+	total, err := s.scenes.Count(ctx, p.Query)
 	if err != nil {
-		return nil, err
+		return model.Page[model.Scene]{}, err
+	}
+	ids, err := s.scenes.ListIDs(ctx, p.Query, p.Limit(), p.Offset())
+	if err != nil {
+		return model.Page[model.Scene]{}, err
 	}
 	scenes := make([]model.Scene, 0, len(ids))
 	for _, id := range ids {
 		scene, err := s.scenes.GetByID(ctx, id)
 		if err != nil {
-			return nil, err
+			return model.Page[model.Scene]{}, err
 		}
 		scenes = append(scenes, scene)
 	}
-	return scenes, nil
+	return model.Page[model.Scene]{Items: scenes, Total: total, Page: p.Page, PageSize: p.PageSize}, nil
 }
 
 // Delete removes a scene by ID.

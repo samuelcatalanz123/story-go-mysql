@@ -30,9 +30,18 @@ func (s *LocationService) Create(ctx context.Context, req model.LocationRequest)
 	return s.repo.GetByID(ctx, id)
 }
 
-// List returns every location.
-func (s *LocationService) List(ctx context.Context) ([]model.Location, error) {
-	return s.repo.List(ctx)
+// List returns a page of locations matching the given params.
+func (s *LocationService) List(ctx context.Context, params model.ListParams) (model.Page[model.Location], error) {
+	p := params.Normalize()
+	total, err := s.repo.Count(ctx, p.Query)
+	if err != nil {
+		return model.Page[model.Location]{}, err
+	}
+	items, err := s.repo.List(ctx, p.Query, p.Limit(), p.Offset())
+	if err != nil {
+		return model.Page[model.Location]{}, err
+	}
+	return model.Page[model.Location]{Items: items, Total: total, Page: p.Page, PageSize: p.PageSize}, nil
 }
 
 // Get returns a single location by ID.

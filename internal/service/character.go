@@ -33,9 +33,18 @@ func (s *CharacterService) Create(ctx context.Context, req model.CharacterReques
 	return s.repo.GetByID(ctx, id)
 }
 
-// List returns every character.
-func (s *CharacterService) List(ctx context.Context) ([]model.Character, error) {
-	return s.repo.List(ctx)
+// List returns a page of characters matching the given params.
+func (s *CharacterService) List(ctx context.Context, params model.ListParams) (model.Page[model.Character], error) {
+	p := params.Normalize()
+	total, err := s.repo.Count(ctx, p.Query)
+	if err != nil {
+		return model.Page[model.Character]{}, err
+	}
+	items, err := s.repo.List(ctx, p.Query, p.Limit(), p.Offset())
+	if err != nil {
+		return model.Page[model.Character]{}, err
+	}
+	return model.Page[model.Character]{Items: items, Total: total, Page: p.Page, PageSize: p.PageSize}, nil
 }
 
 // Get returns a single character by ID.

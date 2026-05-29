@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useList } from "../hooks/useList";
+import { usePagedList } from "../hooks/usePagedList";
 import { DataTable } from "./DataTable";
 import type { Column } from "./DataTable";
 import { ResourceForm } from "./ResourceForm";
@@ -11,9 +11,12 @@ import { Button } from "../ui/Button";
 import { PageHeader } from "../ui/PageHeader";
 import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
+import { SearchBar } from "../ui/SearchBar";
+import { Pagination } from "../ui/Pagination";
 import { useToast } from "../ui/Toast";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
+import type { Paged } from "../types";
 
 type ResourceItem = {
   id: number;
@@ -23,10 +26,11 @@ type ResourceItem = {
 };
 
 type RequestBody = { title: string; text: string | null };
+type ListArgs = { q: string; page: number; pageSize: number };
 
 type Props<T extends ResourceItem> = {
   heading: string;
-  list: () => Promise<T[]>;
+  list: (args: ListArgs) => Promise<Paged<T>>;
   create: (body: RequestBody) => Promise<T>;
   update: (id: number, body: RequestBody) => Promise<T>;
   remove: (id: number) => Promise<void>;
@@ -46,7 +50,8 @@ export function ResourcePage<T extends ResourceItem>({
   update,
   remove,
 }: Props<T>) {
-  const { data, loading, error, reload } = useList(list);
+  const { data, total, page, pageSize, loading, error, setQuery, setPage, reload } =
+    usePagedList(list);
   const toast = useToast();
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -137,6 +142,8 @@ export function ResourcePage<T extends ResourceItem>({
         }
       />
 
+      <SearchBar onQueryChange={setQuery} />
+
       {loading && <SkeletonRows rows={4} cols={4} />}
       {error && (
         <EmptyState
@@ -151,25 +158,28 @@ export function ResourcePage<T extends ResourceItem>({
       )}
       {!loading && !error && data.length === 0 && (
         <EmptyState
-          title="Aún no hay nada aquí"
-          message="Crea el primer elemento para empezar."
+          title="No hay resultados"
+          message="Prueba con otra búsqueda o crea el primer elemento."
           action={isAuthenticated ? <Button onClick={openNew}>Nuevo</Button> : undefined}
         />
       )}
       {!loading && !error && data.length > 0 && (
-        <DataTable
-          columns={columns}
-          rows={data}
-          onEdit={
-            isAuthenticated
-              ? (row) => {
-                  setFormError(null);
-                  setEditing(row);
-                }
-              : undefined
-          }
-          onDelete={isAuthenticated ? (row) => setDeleting(row) : undefined}
-        />
+        <>
+          <DataTable
+            columns={columns}
+            rows={data}
+            onEdit={
+              isAuthenticated
+                ? (row) => {
+                    setFormError(null);
+                    setEditing(row);
+                  }
+                : undefined
+            }
+            onDelete={isAuthenticated ? (row) => setDeleting(row) : undefined}
+          />
+          <Pagination page={page} pageSize={pageSize} total={total} onPage={setPage} />
+        </>
       )}
 
       <Modal

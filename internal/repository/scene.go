@@ -127,10 +127,14 @@ func (r *SceneRepository) GetByID(ctx context.Context, id uint64) (model.Scene, 
 	return s, nil
 }
 
-// ListIDs returns every scene ID ordered ascending. The service composes
-// full scenes from these IDs via GetByID.
-func (r *SceneRepository) ListIDs(ctx context.Context) ([]uint64, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id FROM scenes ORDER BY id ASC")
+// ListIDs returns a page of scene IDs matching q, ordered ascending. The
+// service composes full scenes from these IDs via GetByID.
+func (r *SceneRepository) ListIDs(ctx context.Context, q string, limit, offset int) ([]uint64, error) {
+	where, args := buildSearch(q)
+	query := "SELECT id FROM scenes " + where + "ORDER BY id ASC LIMIT ? OFFSET ?"
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, translate(err)
 	}
@@ -145,6 +149,16 @@ func (r *SceneRepository) ListIDs(ctx context.Context) ([]uint64, error) {
 		ids = append(ids, id)
 	}
 	return ids, rows.Err()
+}
+
+// Count returns the number of scenes matching q.
+func (r *SceneRepository) Count(ctx context.Context, q string) (int, error) {
+	where, args := buildSearch(q)
+	var n int
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM scenes "+where, args...).Scan(&n); err != nil {
+		return 0, translate(err)
+	}
+	return n, nil
 }
 
 func (r *SceneRepository) characters(ctx context.Context, sceneID uint64) ([]model.Character, error) {

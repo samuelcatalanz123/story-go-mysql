@@ -11,6 +11,7 @@ import (
 type Config struct {
 	ServerAddr string
 	WebDir     string
+	JWTSecret  string
 	DB         DBConfig
 }
 
@@ -37,6 +38,7 @@ func Load() Config {
 	return Config{
 		ServerAddr: serverAddr(),
 		WebDir:     env("WEB_DIR", "web/dist"),
+		JWTSecret:  env("JWT_SECRET", "dev-insecure-secret-change-me"),
 		DB: DBConfig{
 			User:     env("DB_USER", "root"),
 			Password: env("DB_PASSWORD", ""),

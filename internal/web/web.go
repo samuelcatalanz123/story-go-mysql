@@ -59,6 +59,10 @@ func RespondError(w http.ResponseWriter, resource string, err error) {
 		Error(w, http.StatusNotFound, resource+" not found")
 	case errors.Is(err, apperror.ErrDuplicateTitle):
 		Error(w, http.StatusConflict, "title already exists")
+	case errors.Is(err, apperror.ErrUnauthorized):
+		Error(w, http.StatusUnauthorized, "unauthorized")
+	case errors.Is(err, apperror.ErrDuplicateEmail):
+		Error(w, http.StatusConflict, "email already registered")
 	default:
 		slog.Error("unhandled error", "resource", resource, "error", err)
 		Error(w, http.StatusInternalServerError, "internal server error")

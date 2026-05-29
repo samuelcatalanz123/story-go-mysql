@@ -14,6 +14,12 @@ var (
 
 	// ErrDuplicateTitle is returned when a unique title constraint is violated.
 	ErrDuplicateTitle = errors.New("title already exists")
+
+	// ErrUnauthorized is returned when credentials are missing or invalid.
+	ErrUnauthorized = errors.New("unauthorized")
+
+	// ErrDuplicateEmail is returned when an email is already registered.
+	ErrDuplicateEmail = errors.New("email already registered")
 )
 
 // ValidationError represents an invalid request that the client can fix.

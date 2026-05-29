@@ -1,4 +1,4 @@
-CREATE TABLE scenes (
+CREATE TABLE IF NOT EXISTS scenes (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL UNIQUE,
   text TEXT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE scenes (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE scene_characters (
+CREATE TABLE IF NOT EXISTS scene_characters (
   scene_id BIGINT UNSIGNED NOT NULL,
   character_id BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (scene_id, character_id),
@@ -18,7 +18,7 @@ CREATE TABLE scene_characters (
     FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
 );
 
-CREATE TABLE scene_locations (
+CREATE TABLE IF NOT EXISTS scene_locations (
   scene_id BIGINT UNSIGNED NOT NULL,
   location_id BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (scene_id, location_id),

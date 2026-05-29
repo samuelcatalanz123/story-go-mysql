@@ -39,7 +39,7 @@ func (m *TokenManager) Parse(tokenString string) (uint64, error) {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
 		return m.secret, nil
-	})
+	}, jwt.WithExpirationRequired())
 	if err != nil {
 		return 0, err
 	}

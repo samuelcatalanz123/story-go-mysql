@@ -31,6 +31,15 @@ func main() {
 func run() error {
 	cfg := config.Load()
 
+	// Refuse to start in production with the publicly known default secret:
+	// it would let anyone forge valid JWTs. Railway and similar hosts set PORT.
+	if cfg.UsesInsecureJWTSecret() {
+		if _, deployed := os.LookupEnv("PORT"); deployed {
+			return errors.New("JWT_SECRET must be set in production (refusing to start with the insecure default)")
+		}
+		slog.Warn("using the insecure default JWT_SECRET; set JWT_SECRET outside local development")
+	}
+
 	db, err := storage.NewMySQL(cfg.DB)
 	if err != nil {
 		return err

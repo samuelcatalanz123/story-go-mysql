@@ -14,7 +14,13 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     const raw = localStorage.getItem("user");
-    return raw ? (JSON.parse(raw) as User) : null;
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as User;
+    } catch {
+      // Valor corrupto en localStorage: lo ignoramos en vez de romper la app.
+      return null;
+    }
   });
 
   function setSession(res: AuthResponse) {

@@ -7,12 +7,23 @@ import (
 	"os"
 )
 
+// insecureJWTSecret is the development-only default for JWT_SECRET. It is a
+// publicly known value, so the server refuses to start with it in production.
+const insecureJWTSecret = "dev-insecure-secret-change-me"
+
 // Config holds every setting the application needs to start.
 type Config struct {
 	ServerAddr string
 	WebDir     string
 	JWTSecret  string
 	DB         DBConfig
+}
+
+// UsesInsecureJWTSecret reports whether JWT_SECRET was left at the public
+// development default. Signing tokens with it in production would let anyone
+// forge valid sessions.
+func (c Config) UsesInsecureJWTSecret() bool {
+	return c.JWTSecret == insecureJWTSecret
 }
 
 // DBConfig holds the MySQL connection settings.
@@ -38,7 +49,7 @@ func Load() Config {
 	return Config{
 		ServerAddr: serverAddr(),
 		WebDir:     env("WEB_DIR", "web/dist"),
-		JWTSecret:  env("JWT_SECRET", "dev-insecure-secret-change-me"),
+		JWTSecret:  env("JWT_SECRET", insecureJWTSecret),
 		DB: DBConfig{
 			User:     env("DB_USER", "root"),
 			Password: env("DB_PASSWORD", ""),

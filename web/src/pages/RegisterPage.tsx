@@ -1,0 +1,40 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthForm } from "../components/AuthForm";
+import { register } from "../api/auth";
+import { useAuth } from "../auth/AuthContext";
+import { useToast } from "../ui/Toast";
+
+export function RegisterPage() {
+  const { setSession } = useAuth();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(email: string, password: string) {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await register({ email, password });
+      setSession(res);
+      toast.success("Cuenta creada");
+      navigate("/characters");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <AuthForm
+      title="Crear cuenta"
+      submitLabel="Registrarme"
+      onSubmit={handleSubmit}
+      submitting={submitting}
+      error={error}
+      footer={<>¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link></>}
+    />
+  );
+}

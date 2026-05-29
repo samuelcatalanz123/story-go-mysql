@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
+import { ApiError } from "../api/client";
 import { useList } from "../hooks/useList";
 import { DataTable } from "../components/DataTable";
 import type { Column } from "../components/DataTable";
@@ -29,6 +32,8 @@ export function ScenesPage() {
   const characters = useList(listCharacters);
   const locations = useList(listLocations);
   const toast = useToast();
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [editing, setEditing] = useState<Editing>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -65,6 +70,16 @@ export function ScenesPage() {
     setEditing("new");
   }
 
+  function isUnauthorized(e: unknown): boolean {
+    if (e instanceof ApiError && e.status === 401) {
+      logout();
+      toast.error("Tu sesión expiró, inicia sesión de nuevo");
+      navigate("/login");
+      return true;
+    }
+    return false;
+  }
+
   async function handleSubmit(values: SceneFormValues) {
     setSubmitting(true);
     setFormError(null);
@@ -87,6 +102,7 @@ export function ScenesPage() {
       setEditing(null);
       scenes.reload();
     } catch (e: unknown) {
+      if (isUnauthorized(e)) return;
       const msg = e instanceof Error ? e.message : "Error desconocido";
       setFormError(msg);
       toast.error(msg);
@@ -102,7 +118,9 @@ export function ScenesPage() {
       toast.success("Escena eliminada");
       scenes.reload();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Error desconocido");
+      if (!isUnauthorized(e)) {
+        toast.error(e instanceof Error ? e.message : "Error desconocido");
+      }
     } finally {
       setDeleting(null);
     }
@@ -122,7 +140,16 @@ export function ScenesPage() {
 
   return (
     <section>
-      <PageHeader title="Escenas" action={<Button onClick={openNew}>Nueva</Button>} />
+      <PageHeader
+        title="Escenas"
+        action={
+          isAuthenticated ? (
+            <Button onClick={openNew}>Nueva</Button>
+          ) : (
+            <Link to="/login">Inicia sesión para gestionar</Link>
+          )
+        }
+      />
 
       {scenes.loading && <SkeletonRows rows={4} cols={6} />}
       {scenes.error && (
@@ -140,18 +167,22 @@ export function ScenesPage() {
         <EmptyState
           title="Aún no hay escenas"
           message="Crea la primera escena para empezar."
-          action={<Button onClick={openNew}>Nueva</Button>}
+          action={isAuthenticated ? <Button onClick={openNew}>Nueva</Button> : undefined}
         />
       )}
       {!scenes.loading && !scenes.error && scenes.data.length > 0 && (
         <DataTable
           columns={columns}
           rows={scenes.data}
-          onEdit={(row) => {
-            setFormError(null);
-            setEditing(row);
-          }}
-          onDelete={(row) => setDeleting(row)}
+          onEdit={
+            isAuthenticated
+              ? (row) => {
+                  setFormError(null);
+                  setEditing(row);
+                }
+              : undefined
+          }
+          onDelete={isAuthenticated ? (row) => setDeleting(row) : undefined}
         />
       )}
 

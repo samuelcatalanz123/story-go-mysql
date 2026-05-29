@@ -56,3 +56,28 @@ type SceneRequest struct {
 	CharacterIDs  []uint64 `json:"characterIds"`
 	LocationIDs   []uint64 `json:"locationIds"`
 }
+
+// User is an authenticated account. The password hash is never serialized.
+type User struct {
+	ID        uint64    `json:"id"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+// RegisterRequest is the payload to create an account.
+type RegisterRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// LoginRequest is the payload to log in.
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// AuthResponse is returned by register/login: a JWT plus the user.
+type AuthResponse struct {
+	Token string `json:"token"`
+	User  User   `json:"user"`
+}

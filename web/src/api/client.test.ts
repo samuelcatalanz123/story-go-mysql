@@ -28,4 +28,18 @@ describe("apiFetch", () => {
     );
     await expect(apiFetch("/characters")).rejects.toThrow("title already exists");
   });
+
+  it("adjunta Authorization si hay token guardado", async () => {
+    localStorage.setItem("token", "abc123");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await apiFetch("/characters");
+    const opts = fetchMock.mock.calls[0][1];
+    expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer abc123");
+    localStorage.removeItem("token");
+  });
 });

@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
+import { Button } from "../ui/Button";
 import styles from "./Layout.module.css";
 
 function UserIcon() {
@@ -33,6 +35,7 @@ const links = [
 ];
 
 export function Layout() {
+  const { user, isAuthenticated, logout } = useAuth();
   return (
     <div className={styles.shell}>
       <nav className={styles.sidebar}>
@@ -42,9 +45,7 @@ export function Layout() {
             <li key={l.to}>
               <NavLink
                 to={l.to}
-                className={({ isActive }) =>
-                  `${styles.link} ${isActive ? styles.active : ""}`
-                }
+                className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ""}`}
               >
                 <span className={styles.icon}>{l.icon}</span>
                 {l.label}
@@ -52,6 +53,20 @@ export function Layout() {
             </li>
           ))}
         </ul>
+        <div className={styles.account}>
+          {isAuthenticated ? (
+            <>
+              <span className={styles.email}>{user?.email}</span>
+              <Button variant="ghost" size="sm" onClick={logout}>
+                Cerrar sesión
+              </Button>
+            </>
+          ) : (
+            <NavLink to="/login" className={styles.link}>
+              Iniciar sesión
+            </NavLink>
+          )}
+        </div>
       </nav>
       <main className={styles.content}>
         <div className={styles.container}>

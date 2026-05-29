@@ -47,13 +47,15 @@ func (r *CharacterRepository) GetByID(ctx context.Context, id uint64) (model.Cha
 	return c, nil
 }
 
-// List returns every character ordered by ID.
-func (r *CharacterRepository) List(ctx context.Context) ([]model.Character, error) {
-	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, title, text, created_at, updated_at
-		FROM characters
-		ORDER BY id ASC
-	`)
+// List returns a page of characters matching q (empty q = no filter),
+// ordered by ID, limited to limit rows starting at offset.
+func (r *CharacterRepository) List(ctx context.Context, q string, limit, offset int) ([]model.Character, error) {
+	where, args := buildSearch(q)
+	query := "SELECT id, title, text, created_at, updated_at FROM characters " +
+		where + "ORDER BY id ASC LIMIT ? OFFSET ?"
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, translate(err)
 	}
@@ -68,6 +70,16 @@ func (r *CharacterRepository) List(ctx context.Context) ([]model.Character, erro
 		characters = append(characters, c)
 	}
 	return characters, rows.Err()
+}
+
+// Count returns the number of characters matching q.
+func (r *CharacterRepository) Count(ctx context.Context, q string) (int, error) {
+	where, args := buildSearch(q)
+	var n int
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM characters "+where, args...).Scan(&n); err != nil {
+		return 0, translate(err)
+	}
+	return n, nil
 }
 
 // Update modifies a character. It returns apperror.ErrNotFound when no row

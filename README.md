@@ -1,5 +1,7 @@
 # Story API — Go + MySQL
 
+[![CI](https://github.com/samuelcatalanz123/story-go-mysql/actions/workflows/ci.yml/badge.svg)](https://github.com/samuelcatalanz123/story-go-mysql/actions/workflows/ci.yml)
+
 > 🌐 Idiomas / Languages: **Español** · [English](README.en.md)
 
 API HTTP en JSON, escrita en Go con la librería estándar (`net/http`,

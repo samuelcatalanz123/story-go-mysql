@@ -50,9 +50,20 @@ export const deleteScene = (id: number) =>
   apiFetch<void>(`/scenes/${id}`, { method: "DELETE" });
 
 // Helpers que traen TODOS los elementos (para los desplegables del formulario
-// de escenas), usando un pageSize grande.
-const ALL: ListArgs = { q: "", page: 1, pageSize: 1000 };
-export const listAllCharacters = () =>
-  apiFetch<Paged<Character>>(`/characters?${listQuery(ALL)}`).then((p) => p.items);
-export const listAllLocations = () =>
-  apiFetch<Paged<Location>>(`/locations?${listQuery(ALL)}`).then((p) => p.items);
+// de escenas). El backend limita pageSize a 100, así que paginamos hasta
+// agotar el total en vez de pedir una sola página enorme.
+async function fetchAll<T>(loader: (args: ListArgs) => Promise<Paged<T>>): Promise<T[]> {
+  const pageSize = 100;
+  const all: T[] = [];
+  let page = 1;
+  for (;;) {
+    const res = await loader({ q: "", page, pageSize });
+    all.push(...res.items);
+    if (res.items.length === 0 || all.length >= res.total) break;
+    page += 1;
+  }
+  return all;
+}
+
+export const listAllCharacters = () => fetchAll(listCharacters);
+export const listAllLocations = () => fetchAll(listLocations);

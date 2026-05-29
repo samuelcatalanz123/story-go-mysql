@@ -71,3 +71,14 @@ func allExist(ctx context.Context, db *sql.DB, table string, ids []uint64) (bool
 	}
 	return count == len(ids), nil
 }
+
+// buildSearch returns the WHERE clause (with a trailing space) and args for a
+// title/text search. An empty query yields an empty clause and nil args, so
+// callers can concatenate " ORDER BY ... LIMIT ? OFFSET ?" right after it.
+func buildSearch(q string) (string, []any) {
+	if q == "" {
+		return "", nil
+	}
+	pattern := "%" + q + "%"
+	return "WHERE title LIKE ? OR (text IS NOT NULL AND text LIKE ?) ", []any{pattern, pattern}
+}

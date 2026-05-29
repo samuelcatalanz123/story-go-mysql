@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext";
-import { ApiError } from "../api/client";
 import { useList } from "../hooks/useList";
+import { usePagedList } from "../hooks/usePagedList";
 import { DataTable } from "../components/DataTable";
 import type { Column } from "../components/DataTable";
 import { SceneForm } from "../components/SceneForm";
@@ -13,8 +12,8 @@ import {
   createScene,
   updateScene,
   deleteScene,
-  listCharacters,
-  listLocations,
+  listAllCharacters,
+  listAllLocations,
 } from "../api/resources";
 import { Modal } from "../ui/Modal";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
@@ -23,14 +22,18 @@ import { PageHeader } from "../ui/PageHeader";
 import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { Badge } from "../ui/Badge";
+import { SearchBar } from "../ui/SearchBar";
+import { Pagination } from "../ui/Pagination";
 import { useToast } from "../ui/Toast";
+import { useAuth } from "../auth/AuthContext";
+import { ApiError } from "../api/client";
 
 type Editing = null | "new" | Scene;
 
 export function ScenesPage() {
-  const scenes = useList(listScenes);
-  const characters = useList(listCharacters);
-  const locations = useList(listLocations);
+  const scenes = usePagedList(listScenes);
+  const characters = useList(listAllCharacters);
+  const locations = useList(listAllLocations);
   const toast = useToast();
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -59,9 +62,7 @@ export function ScenesPage() {
     {
       header: "Lugares",
       render: (s) =>
-        s.locations.length
-          ? s.locations.map((l) => <Badge key={l.id}>{l.title}</Badge>)
-          : "—",
+        s.locations.length ? s.locations.map((l) => <Badge key={l.id}>{l.title}</Badge>) : "—",
     },
   ];
 
@@ -151,6 +152,8 @@ export function ScenesPage() {
         }
       />
 
+      <SearchBar onQueryChange={scenes.setQuery} />
+
       {scenes.loading && <SkeletonRows rows={4} cols={6} />}
       {scenes.error && (
         <EmptyState
@@ -165,25 +168,33 @@ export function ScenesPage() {
       )}
       {!scenes.loading && !scenes.error && scenes.data.length === 0 && (
         <EmptyState
-          title="Aún no hay escenas"
-          message="Crea la primera escena para empezar."
+          title="No hay resultados"
+          message="Prueba con otra búsqueda o crea la primera escena."
           action={isAuthenticated ? <Button onClick={openNew}>Nueva</Button> : undefined}
         />
       )}
       {!scenes.loading && !scenes.error && scenes.data.length > 0 && (
-        <DataTable
-          columns={columns}
-          rows={scenes.data}
-          onEdit={
-            isAuthenticated
-              ? (row) => {
-                  setFormError(null);
-                  setEditing(row);
-                }
-              : undefined
-          }
-          onDelete={isAuthenticated ? (row) => setDeleting(row) : undefined}
-        />
+        <>
+          <DataTable
+            columns={columns}
+            rows={scenes.data}
+            onEdit={
+              isAuthenticated
+                ? (row) => {
+                    setFormError(null);
+                    setEditing(row);
+                  }
+                : undefined
+            }
+            onDelete={isAuthenticated ? (row) => setDeleting(row) : undefined}
+          />
+          <Pagination
+            page={scenes.page}
+            pageSize={scenes.pageSize}
+            total={scenes.total}
+            onPage={scenes.setPage}
+          />
+        </>
       )}
 
       <Modal

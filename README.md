@@ -1,5 +1,7 @@
 # Story API — Go + MySQL
 
+> 🌐 Idiomas / Languages: **Español** · [English](README.en.md)
+
 API HTTP en JSON, escrita en Go con la librería estándar (`net/http`,
 `database/sql`) y MySQL, para gestionar personajes, lugares, escenas y las
 relaciones entre escenas con personajes y lugares.
@@ -41,8 +43,9 @@ internal/
   web/                    Helpers JSON y mapeo de errores de dominio → HTTP
   repository/             Acceso a datos (SQL); traduce errores del driver a dominio
   service/                Lógica de negocio y validación
-  handler/                Capa HTTP + router
-sql/                      Migraciones de esquema
+  handler/                Capa HTTP + router + servido del frontend (SPA)
+  storage/migrations/     Esquema (migraciones idempotentes, embebidas)
+web/                      Frontend React + TypeScript (Vite)
 ```
 
 Flujo de una petición:

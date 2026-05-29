@@ -61,9 +61,12 @@ func run() error {
 		handler.NewSceneHandler(sceneSvc),
 	)
 
+	// El binario sirve la API en /api/* y el frontend compilado en el resto.
+	app := handler.WithFrontend(router, cfg.WebDir)
+
 	server := &http.Server{
 		Addr:              cfg.ServerAddr,
-		Handler:           router,
+		Handler:           app,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,

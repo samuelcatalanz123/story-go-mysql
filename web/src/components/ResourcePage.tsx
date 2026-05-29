@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useList } from "../hooks/useList";
 import { DataTable } from "./DataTable";
 import type { Column } from "./DataTable";
@@ -11,6 +12,8 @@ import { PageHeader } from "../ui/PageHeader";
 import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { useToast } from "../ui/Toast";
+import { useAuth } from "../auth/AuthContext";
+import { ApiError } from "../api/client";
 
 type ResourceItem = {
   id: number;
@@ -45,6 +48,8 @@ export function ResourcePage<T extends ResourceItem>({
 }: Props<T>) {
   const { data, loading, error, reload } = useList(list);
   const toast = useToast();
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState<Editing<T>>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -60,6 +65,16 @@ export function ResourcePage<T extends ResourceItem>({
   function openNew() {
     setFormError(null);
     setEditing("new");
+  }
+
+  function isUnauthorized(e: unknown): boolean {
+    if (e instanceof ApiError && e.status === 401) {
+      logout();
+      toast.error("Tu sesión expiró, inicia sesión de nuevo");
+      navigate("/login");
+      return true;
+    }
+    return false;
   }
 
   function toBody(values: ResourceFormValues): RequestBody {
@@ -80,6 +95,7 @@ export function ResourcePage<T extends ResourceItem>({
       setEditing(null);
       reload();
     } catch (e: unknown) {
+      if (isUnauthorized(e)) return;
       const msg = e instanceof Error ? e.message : "Error desconocido";
       setFormError(msg);
       toast.error(msg);
@@ -95,7 +111,9 @@ export function ResourcePage<T extends ResourceItem>({
       toast.success("Eliminado");
       reload();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Error desconocido");
+      if (!isUnauthorized(e)) {
+        toast.error(e instanceof Error ? e.message : "Error desconocido");
+      }
     } finally {
       setDeleting(null);
     }
@@ -108,7 +126,16 @@ export function ResourcePage<T extends ResourceItem>({
 
   return (
     <section>
-      <PageHeader title={heading} action={<Button onClick={openNew}>Nuevo</Button>} />
+      <PageHeader
+        title={heading}
+        action={
+          isAuthenticated ? (
+            <Button onClick={openNew}>Nuevo</Button>
+          ) : (
+            <Link to="/login">Inicia sesión para gestionar</Link>
+          )
+        }
+      />
 
       {loading && <SkeletonRows rows={4} cols={4} />}
       {error && (
@@ -126,18 +153,22 @@ export function ResourcePage<T extends ResourceItem>({
         <EmptyState
           title="Aún no hay nada aquí"
           message="Crea el primer elemento para empezar."
-          action={<Button onClick={openNew}>Nuevo</Button>}
+          action={isAuthenticated ? <Button onClick={openNew}>Nuevo</Button> : undefined}
         />
       )}
       {!loading && !error && data.length > 0 && (
         <DataTable
           columns={columns}
           rows={data}
-          onEdit={(row) => {
-            setFormError(null);
-            setEditing(row);
-          }}
-          onDelete={(row) => setDeleting(row)}
+          onEdit={
+            isAuthenticated
+              ? (row) => {
+                  setFormError(null);
+                  setEditing(row);
+                }
+              : undefined
+          }
+          onDelete={isAuthenticated ? (row) => setDeleting(row) : undefined}
         />
       )}
 

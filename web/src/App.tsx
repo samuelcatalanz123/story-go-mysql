@@ -3,7 +3,6 @@ import { Layout } from "./components/Layout";
 import { CharactersPage } from "./pages/CharactersPage";
 import { LocationsPage } from "./pages/LocationsPage";
 import { ScenesPage } from "./pages/ScenesPage";
-import "./App.module.css";
 
 export default function App() {
   return (

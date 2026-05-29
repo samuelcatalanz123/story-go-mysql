@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"story-go-mysql/internal/auth"
 	"story-go-mysql/internal/config"
 	"story-go-mysql/internal/handler"
 	"story-go-mysql/internal/repository"
@@ -54,8 +55,15 @@ func run() error {
 	locationSvc := service.NewLocationService(locationRepo)
 	sceneSvc := service.NewSceneService(sceneRepo, characterRepo, locationRepo)
 
+	// Auth: token manager + user repository + service.
+	tokenManager := auth.NewTokenManager(cfg.JWTSecret, 24*time.Hour)
+	userRepo := repository.NewUserRepository(db)
+	authSvc := service.NewAuthService(userRepo, tokenManager)
+
 	// Handlers (HTTP) and router.
 	router := handler.Router(
+		tokenManager,
+		handler.NewAuthHandler(authSvc),
 		handler.NewCharacterHandler(characterSvc),
 		handler.NewLocationHandler(locationSvc),
 		handler.NewSceneHandler(sceneSvc),

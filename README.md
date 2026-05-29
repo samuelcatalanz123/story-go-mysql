@@ -173,6 +173,7 @@ tablas se crean solas al arrancar (migraciones idempotentes).
    - `DB_USER=${{MySQL.MYSQLUSER}}`
    - `DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}`
    - `DB_NAME=${{MySQL.MYSQLDATABASE}}`
+   - `JWT_SECRET=<un secreto largo y aleatorio>`
 5. Railway detecta el `Dockerfile`, construye y publica una URL. Cada `push`
    a `main` vuelve a desplegar.
 

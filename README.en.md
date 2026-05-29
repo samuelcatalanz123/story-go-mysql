@@ -134,5 +134,6 @@ created automatically on startup (idempotent migrations).
    - `DB_USER=${{MySQL.MYSQLUSER}}`
    - `DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}`
    - `DB_NAME=${{MySQL.MYSQLDATABASE}}`
+   - `JWT_SECRET=<a long random secret>`
 5. Railway detects the `Dockerfile`, builds it, and publishes a URL. Every push
    to `main` redeploys automatically.

@@ -10,6 +10,7 @@ import (
 // Config holds every setting the application needs to start.
 type Config struct {
 	ServerAddr string
+	WebDir     string
 	DB         DBConfig
 }
 
@@ -34,7 +35,8 @@ func (c DBConfig) DSN() string {
 // match a local MySQL instance so the project runs out of the box.
 func Load() Config {
 	return Config{
-		ServerAddr: env("SERVER_ADDR", ":8080"),
+		ServerAddr: serverAddr(),
+		WebDir:     env("WEB_DIR", "web/dist"),
 		DB: DBConfig{
 			User:     env("DB_USER", "root"),
 			Password: env("DB_PASSWORD", ""),
@@ -43,6 +45,15 @@ func Load() Config {
 			Name:     env("DB_NAME", "story_go_db"),
 		},
 	}
+}
+
+// serverAddr prefers the PORT variable that platforms like Railway inject,
+// falling back to SERVER_ADDR (default :8080) for local development.
+func serverAddr() string {
+	if port, ok := os.LookupEnv("PORT"); ok {
+		return ":" + port
+	}
+	return env("SERVER_ADDR", ":8080")
 }
 
 // env returns the value of the environment variable or a fallback default.

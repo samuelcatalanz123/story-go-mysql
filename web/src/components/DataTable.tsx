@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Button } from "../ui/Button";
 import styles from "./DataTable.module.css";
 
 export type Column<T> = {
@@ -42,9 +43,19 @@ export function DataTable<T extends { id: number }>({
               <td key={c.header}>{c.render(row)}</td>
             ))}
             {hasActions && (
-              <td className={styles.actions}>
-                {onEdit && <button onClick={() => onEdit(row)}>Editar</button>}
-                {onDelete && <button onClick={() => onDelete(row)}>Borrar</button>}
+              <td>
+                <div className={styles.actions}>
+                  {onEdit && (
+                    <Button variant="ghost" size="sm" onClick={() => onEdit(row)}>
+                      Editar
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button variant="danger" size="sm" onClick={() => onDelete(row)}>
+                      Borrar
+                    </Button>
+                  )}
+                </div>
               </td>
             )}
           </tr>

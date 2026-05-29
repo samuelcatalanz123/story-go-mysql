@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { Field } from "../ui/Field";
+import { Button } from "../ui/Button";
+import styles from "./ResourceForm.module.css";
 
 export type ResourceFormValues = { title: string; text: string };
 
@@ -30,29 +33,25 @@ export function ResourceForm({ initial, onSubmit, onCancel, submitting, error }:
 
   return (
     <form onSubmit={handleSubmit}>
-      {shownError && <p role="alert">{shownError}</p>}
-      <div>
-        <label htmlFor="rf-title">Título</label>
-        <input
-          id="rf-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
+      {shownError && (
+        <p role="alert" className={styles.alert}>
+          {shownError}
+        </p>
+      )}
+      <Field label="Título" htmlFor="rf-title">
+        <input id="rf-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </Field>
+      <Field label="Texto" htmlFor="rf-text">
+        <textarea id="rf-text" value={text} onChange={(e) => setText(e.target.value)} />
+      </Field>
+      <div className={styles.actions}>
+        <Button type="button" variant="secondary" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={submitting}>
+          Guardar
+        </Button>
       </div>
-      <div>
-        <label htmlFor="rf-text">Texto</label>
-        <textarea
-          id="rf-text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-      </div>
-      <button type="submit" disabled={submitting}>
-        Guardar
-      </button>
-      <button type="button" onClick={onCancel}>
-        Cancelar
-      </button>
     </form>
   );
 }

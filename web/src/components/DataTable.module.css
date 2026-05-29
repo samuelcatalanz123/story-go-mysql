@@ -1,16 +1,31 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 .table th,
 .table td {
-  border: 1px solid #ddd;
-  padding: 0.5rem;
+  padding: var(--space-3) var(--space-4);
   text-align: left;
+  border-bottom: 1px solid var(--color-border);
 }
 .table th {
-  background: #f5f5f5;
+  background: var(--color-bg);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
-.actions button {
-  margin-right: 0.5rem;
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+.table tbody tr:hover {
+  background: var(--color-bg);
+}
+.actions {
+  display: flex;
+  gap: var(--space-2);
 }

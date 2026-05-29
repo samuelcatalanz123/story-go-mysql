@@ -4,8 +4,14 @@ import { DataTable } from "./DataTable";
 import type { Column } from "./DataTable";
 import { ResourceForm } from "./ResourceForm";
 import type { ResourceFormValues } from "./ResourceForm";
+import { Modal } from "../ui/Modal";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { Button } from "../ui/Button";
+import { PageHeader } from "../ui/PageHeader";
+import { SkeletonRows } from "../ui/Skeleton";
+import { EmptyState } from "../ui/EmptyState";
+import { useToast } from "../ui/Toast";
 
-// Forma mínima que deben cumplir los elementos de esta página.
 type ResourceItem = {
   id: number;
   title: string;
@@ -23,8 +29,12 @@ type Props<T extends ResourceItem> = {
   remove: (id: number) => Promise<void>;
 };
 
-// `null` = sólo lista; "new" = creando; un objeto = editando ese elemento.
 type Editing<T> = null | "new" | T;
+
+function formatDate(value: string): string {
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? value : d.toLocaleString();
+}
 
 export function ResourcePage<T extends ResourceItem>({
   heading,
@@ -34,19 +44,23 @@ export function ResourcePage<T extends ResourceItem>({
   remove,
 }: Props<T>) {
   const { data, loading, error, reload } = useList(list);
+  const toast = useToast();
   const [editing, setEditing] = useState<Editing<T>>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState<T | null>(null);
 
   const columns: Column<T>[] = [
     { header: "ID", render: (r) => r.id },
     { header: "Título", render: (r) => r.title },
     { header: "Texto", render: (r) => r.text ?? "—" },
-    {
-      header: "Actualizado",
-      render: (r) => new Date(r.updatedAt).toLocaleString(),
-    },
+    { header: "Actualizado", render: (r) => formatDate(r.updatedAt) },
   ];
+
+  function openNew() {
+    setFormError(null);
+    setEditing("new");
+  }
 
   function toBody(values: ResourceFormValues): RequestBody {
     return { title: values.title, text: values.text.trim() === "" ? null : values.text };
@@ -58,36 +72,83 @@ export function ResourcePage<T extends ResourceItem>({
     try {
       if (editing === "new") {
         await create(toBody(values));
+        toast.success("Creado correctamente");
       } else if (editing) {
         await update(editing.id, toBody(values));
+        toast.success("Cambios guardados");
       }
       setEditing(null);
       reload();
     } catch (e: unknown) {
-      setFormError(e instanceof Error ? e.message : "Error desconocido");
+      const msg = e instanceof Error ? e.message : "Error desconocido";
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleDelete(row: T) {
-    if (!window.confirm(`¿Borrar "${row.title}"?`)) return;
+  async function confirmDelete() {
+    if (!deleting) return;
     try {
-      await remove(row.id);
+      await remove(deleting.id);
+      toast.success("Eliminado");
       reload();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Error desconocido");
+      toast.error(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setDeleting(null);
     }
   }
 
-  if (editing !== null) {
-    const initial =
-      editing === "new"
-        ? undefined
-        : { title: editing.title, text: editing.text ?? "" };
-    return (
-      <section>
-        <h1>{editing === "new" ? `Nuevo: ${heading}` : `Editar: ${heading}`}</h1>
+  const initial =
+    editing && editing !== "new"
+      ? { title: editing.title, text: editing.text ?? "" }
+      : undefined;
+
+  return (
+    <section>
+      <PageHeader title={heading} action={<Button onClick={openNew}>Nuevo</Button>} />
+
+      {loading && <SkeletonRows rows={4} cols={4} />}
+      {error && (
+        <EmptyState
+          title="No se pudo cargar"
+          message={error}
+          action={
+            <Button variant="secondary" onClick={reload}>
+              Reintentar
+            </Button>
+          }
+        />
+      )}
+      {!loading && !error && data.length === 0 && (
+        <EmptyState
+          title="Aún no hay nada aquí"
+          message="Crea el primer elemento para empezar."
+          action={<Button onClick={openNew}>Nuevo</Button>}
+        />
+      )}
+      {!loading && !error && data.length > 0 && (
+        <DataTable
+          columns={columns}
+          rows={data}
+          onEdit={(row) => {
+            setFormError(null);
+            setEditing(row);
+          }}
+          onDelete={(row) => setDeleting(row)}
+        />
+      )}
+
+      <Modal
+        open={editing !== null}
+        onClose={() => {
+          setEditing(null);
+          setFormError(null);
+        }}
+        title={editing === "new" ? `Nuevo: ${heading}` : `Editar: ${heading}`}
+      >
         <ResourceForm
           initial={initial}
           onSubmit={handleSubmit}
@@ -98,24 +159,16 @@ export function ResourcePage<T extends ResourceItem>({
           submitting={submitting}
           error={formError}
         />
-      </section>
-    );
-  }
+      </Modal>
 
-  return (
-    <section>
-      <h1>{heading}</h1>
-      <button onClick={() => setEditing("new")}>Nuevo</button>
-      {loading && <p>Cargando…</p>}
-      {error && <p role="alert">Error: {error}</p>}
-      {!loading && !error && (
-        <DataTable
-          columns={columns}
-          rows={data}
-          onEdit={(row) => setEditing(row)}
-          onDelete={handleDelete}
-        />
-      )}
+      <ConfirmDialog
+        open={deleting !== null}
+        title="Confirmar borrado"
+        message={deleting ? `¿Seguro que quieres borrar "${deleting.title}"?` : ""}
+        confirmLabel="Borrar"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleting(null)}
+      />
     </section>
   );
 }

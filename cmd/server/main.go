@@ -36,6 +36,14 @@ func run() error {
 	}
 	defer db.Close()
 
+	// Crea el esquema si no existe (idempotente). Así una base de datos
+	// nueva (p. ej. en Railway) queda lista al arrancar.
+	migCtx, migCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer migCancel()
+	if err := storage.Migrate(migCtx, db); err != nil {
+		return err
+	}
+
 	// Repositories (data access).
 	characterRepo := repository.NewCharacterRepository(db)
 	locationRepo := repository.NewLocationRepository(db)

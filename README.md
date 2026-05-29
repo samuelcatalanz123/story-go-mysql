@@ -4,6 +4,27 @@ API HTTP en JSON, escrita en Go con la librería estándar (`net/http`,
 `database/sql`) y MySQL, para gestionar personajes, lugares, escenas y las
 relaciones entre escenas con personajes y lugares.
 
+## 🚀 Demo en vivo
+
+**Panel de administración:** <!-- Pega aquí la URL pública de Railway tras desplegar, p. ej. https://story-go-mysql-production.up.railway.app -->
+
+> Aplicación full-stack: API en Go + MySQL y frontend en React + TypeScript,
+> servidos como un único servicio en Railway.
+
+### Capturas
+
+![Panel de personajes](docs/screenshots/characters.png)
+![Formulario en modal](docs/screenshots/form.png)
+
+_(Sustituye las imágenes por tus propias capturas en `docs/screenshots/`.)_
+
+## Stack
+
+- **Backend:** Go (net/http, database/sql) + MySQL.
+- **Frontend:** React 19 + TypeScript + Vite + CSS Modules.
+- **Pruebas:** Vitest + Testing Library (frontend), `go test` (backend).
+- **Despliegue:** Docker (build multi-etapa) en Railway.
+
 ## Arquitectura
 
 El proyecto sigue una arquitectura en capas con inyección de dependencias.
@@ -57,11 +78,8 @@ exit;
 
 ## Crear tablas
 
-```bash
-mysql -u root -p story_go_db < sql/001_create_characters.sql
-mysql -u root -p story_go_db < sql/002_create_locations.sql
-mysql -u root -p story_go_db < sql/003_create_scenes.sql
-```
+No hace falta ningún paso manual: al arrancar, el servidor crea las tablas si
+no existen (migraciones embebidas en `internal/storage/migrations/`).
 
 ## Configuración
 
@@ -136,3 +154,26 @@ Códigos usados:
 - `405 Method Not Allowed` — método no soportado en la ruta
 - `409 Conflict` — título duplicado
 - `500 Internal Server Error` — error inesperado
+
+## Despliegue (Railway)
+
+La app se despliega como **un único servicio**: el binario de Go sirve la API
+bajo `/api/*` y el frontend compilado (`web/dist`) en el resto de rutas. Las
+tablas se crean solas al arrancar (migraciones idempotentes).
+
+1. Sube el repositorio a GitHub.
+2. En [Railway](https://railway.app): **New Project → Deploy from GitHub repo**.
+3. Añade un plugin **MySQL** al proyecto.
+4. En las variables del servicio, referencia las del MySQL:
+   - `DB_HOST=${{MySQL.MYSQLHOST}}`
+   - `DB_PORT=${{MySQL.MYSQLPORT}}`
+   - `DB_USER=${{MySQL.MYSQLUSER}}`
+   - `DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}`
+   - `DB_NAME=${{MySQL.MYSQLDATABASE}}`
+5. Railway detecta el `Dockerfile`, construye y publica una URL. Cada `push`
+   a `main` vuelve a desplegar.
+
+### Desarrollo local
+
+Sigue necesitando un MySQL local (ver más abajo). Arranca la API con
+`go run ./cmd/server` y el frontend con `cd web && npm run dev`.

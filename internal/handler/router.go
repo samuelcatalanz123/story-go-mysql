@@ -15,6 +15,7 @@ func Router(
 	locations *LocationHandler,
 	scenes *SceneHandler,
 	stories *StoryHandler,
+	organizations *OrganizationHandler,
 ) http.Handler {
 	mux := http.NewServeMux()
 
@@ -49,6 +50,13 @@ func Router(
 	mux.Handle("POST /scenes", RequireAuth(tokens, http.HandlerFunc(scenes.Create)))
 	mux.Handle("PUT /scenes/{id}", RequireAuth(tokens, http.HandlerFunc(scenes.Update)))
 	mux.Handle("DELETE /scenes/{id}", RequireAuth(tokens, http.HandlerFunc(scenes.Delete)))
+
+	// Organizations: reads public, writes protected.
+	mux.HandleFunc("GET /organizations", organizations.List)
+	mux.HandleFunc("GET /organizations/{id}", organizations.Get)
+	mux.Handle("POST /organizations", RequireAuth(tokens, http.HandlerFunc(organizations.Create)))
+	mux.Handle("PUT /organizations/{id}", RequireAuth(tokens, http.HandlerFunc(organizations.Update)))
+	mux.Handle("DELETE /organizations/{id}", RequireAuth(tokens, http.HandlerFunc(organizations.Delete)))
 
 	return mux
 }

@@ -21,6 +21,25 @@ type StoryRequest struct {
 	Text  *string `json:"text"`
 }
 
+// Organization is a group (guild, government, crew) that characters can
+// belong to. It optionally belongs to a story.
+type Organization struct {
+	ID        uint64    `json:"id"`
+	Title     string    `json:"title"`
+	Text      *string   `json:"text"`
+	StoryID   *uint64   `json:"storyId"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// OrganizationRequest is the payload accepted when creating or updating an
+// organization.
+type OrganizationRequest struct {
+	Title   string  `json:"title"`
+	Text    *string `json:"text"`
+	StoryID *uint64 `json:"storyId"`
+}
+
 // Character is a person that can appear in scenes.
 type Character struct {
 	ID        uint64    `json:"id"`

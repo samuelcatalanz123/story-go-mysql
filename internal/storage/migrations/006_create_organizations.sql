@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS organizations (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL UNIQUE,
+  text TEXT NULL,
+  story_id BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_organizations_story FOREIGN KEY (story_id) REFERENCES stories (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS character_organizations (
+  character_id BIGINT UNSIGNED NOT NULL,
+  organization_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (character_id, organization_id),
+  CONSTRAINT fk_co_character FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
+  CONSTRAINT fk_co_organization FOREIGN KEY (organization_id) REFERENCES organizations (id) ON DELETE CASCADE
+);

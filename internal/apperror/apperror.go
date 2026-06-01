@@ -20,6 +20,10 @@ var (
 
 	// ErrDuplicateEmail is returned when an email is already registered.
 	ErrDuplicateEmail = errors.New("email already registered")
+
+	// ErrInvalidReference is returned when a request references a related row
+	// that does not exist (a foreign-key constraint violation).
+	ErrInvalidReference = errors.New("referenced resource does not exist")
 )
 
 // ValidationError represents an invalid request that the client can fix.

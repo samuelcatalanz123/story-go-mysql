@@ -16,6 +16,7 @@ func Router(
 	scenes *SceneHandler,
 	stories *StoryHandler,
 	organizations *OrganizationHandler,
+	conflicts *ConflictHandler,
 ) http.Handler {
 	mux := http.NewServeMux()
 
@@ -57,6 +58,13 @@ func Router(
 	mux.Handle("POST /organizations", RequireAuth(tokens, http.HandlerFunc(organizations.Create)))
 	mux.Handle("PUT /organizations/{id}", RequireAuth(tokens, http.HandlerFunc(organizations.Update)))
 	mux.Handle("DELETE /organizations/{id}", RequireAuth(tokens, http.HandlerFunc(organizations.Delete)))
+
+	// Conflicts: reads public, writes protected.
+	mux.HandleFunc("GET /conflicts", conflicts.List)
+	mux.HandleFunc("GET /conflicts/{id}", conflicts.Get)
+	mux.Handle("POST /conflicts", RequireAuth(tokens, http.HandlerFunc(conflicts.Create)))
+	mux.Handle("PUT /conflicts/{id}", RequireAuth(tokens, http.HandlerFunc(conflicts.Update)))
+	mux.Handle("DELETE /conflicts/{id}", RequireAuth(tokens, http.HandlerFunc(conflicts.Delete)))
 
 	return mux
 }

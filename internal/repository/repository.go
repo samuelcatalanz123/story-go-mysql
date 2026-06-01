@@ -14,8 +14,11 @@ import (
 	"story-go-mysql/internal/apperror"
 )
 
-// mysqlDuplicateEntry is the MySQL error number for a unique-key violation.
-const mysqlDuplicateEntry = 1062
+// MySQL error numbers we map to domain errors.
+const (
+	mysqlDuplicateEntry  = 1062 // unique-key violation
+	mysqlForeignKeyError = 1452 // foreign-key constraint failure (bad reference)
+)
 
 // translate maps low-level driver errors to domain errors. It returns the
 // original error unchanged when no mapping applies.
@@ -27,8 +30,13 @@ func translate(err error) error {
 		return apperror.ErrNotFound
 	}
 	var mysqlErr *mysql.MySQLError
-	if errors.As(err, &mysqlErr) && mysqlErr.Number == mysqlDuplicateEntry {
-		return apperror.ErrDuplicateTitle
+	if errors.As(err, &mysqlErr) {
+		switch mysqlErr.Number {
+		case mysqlDuplicateEntry:
+			return apperror.ErrDuplicateTitle
+		case mysqlForeignKeyError:
+			return apperror.ErrInvalidReference
+		}
 	}
 	return err
 }

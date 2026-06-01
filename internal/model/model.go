@@ -40,6 +40,26 @@ type OrganizationRequest struct {
 	StoryID *uint64 `json:"storyId"`
 }
 
+// Conflict is a confrontation (battle, dispute) that can take place in a
+// scene and belong to a story. Both relations are optional.
+type Conflict struct {
+	ID        uint64    `json:"id"`
+	Title     string    `json:"title"`
+	Text      *string   `json:"text"`
+	SceneID   *uint64   `json:"sceneId"`
+	StoryID   *uint64   `json:"storyId"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// ConflictRequest is the payload accepted when creating or updating a conflict.
+type ConflictRequest struct {
+	Title   string  `json:"title"`
+	Text    *string `json:"text"`
+	SceneID *uint64 `json:"sceneId"`
+	StoryID *uint64 `json:"storyId"`
+}
+
 // Character is a person that can appear in scenes. A character can belong to
 // several organizations (many-to-many). Organizations is omitted from the
 // JSON when not loaded (e.g. characters embedded inside a scene).

@@ -2,8 +2,10 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"story-go-mysql/internal/auth"
+	"story-go-mysql/internal/cache"
 )
 
 // Router builds the HTTP routing table. GET routes are public; write routes
@@ -19,17 +21,25 @@ func Router(
 	organizations *OrganizationHandler,
 	conflicts *ConflictHandler,
 	uploadDir string,
+	c cache.Cache,
 ) http.Handler {
 	mux := http.NewServeMux()
 
-	// Auth (public). Refresh and logout rely on the HttpOnly refresh cookie.
-	mux.HandleFunc("POST /auth/register", authH.Register)
-	mux.HandleFunc("POST /auth/login", authH.Login)
-	mux.HandleFunc("POST /auth/refresh", authH.Refresh)
-	mux.HandleFunc("POST /auth/logout", authH.Logout)
-	mux.HandleFunc("POST /auth/oauth/google", authH.OAuthGoogle)
-	mux.HandleFunc("POST /auth/forgot-password", passwordH.Forgot)
-	mux.HandleFunc("POST /auth/reset-password", passwordH.Reset)
+	// Rate limit the auth routes: max 10 requests per IP per minute. Protects
+	// against brute-force login / password-reset spam.
+	rl := RateLimit(c, 10, time.Minute)
+	authPost := func(pattern string, h http.HandlerFunc) {
+		mux.Handle(pattern, rl(h))
+	}
+
+	// Auth (public, rate-limited). Refresh/logout rely on the HttpOnly cookie.
+	authPost("POST /auth/register", authH.Register)
+	authPost("POST /auth/login", authH.Login)
+	authPost("POST /auth/refresh", authH.Refresh)
+	authPost("POST /auth/logout", authH.Logout)
+	authPost("POST /auth/oauth/google", authH.OAuthGoogle)
+	authPost("POST /auth/forgot-password", passwordH.Forgot)
+	authPost("POST /auth/reset-password", passwordH.Reset)
 
 	// Uploaded files served statically (public, read-only).
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadDir))))

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"story-go-mysql/internal/auth"
+	"story-go-mysql/internal/cache"
 	"story-go-mysql/internal/config"
 	"story-go-mysql/internal/email"
 	"story-go-mysql/internal/handler"
@@ -67,8 +68,19 @@ func run() error {
 	oauthRepo := repository.NewOAuthAccountRepository(db)
 	passwordResetRepo := repository.NewPasswordResetRepository(db)
 
+	// Cache: Redis when reachable, otherwise a no-op so the app keeps working.
+	var appCache cache.Cache = cache.Noop{}
+	if cfg.Redis.Addr != "" {
+		if rc, cacheErr := cache.NewRedis(context.Background(), cfg.Redis.Addr, cfg.Redis.Password); cacheErr != nil {
+			slog.Warn("redis unavailable; caching and rate limiting disabled", "error", cacheErr)
+		} else {
+			appCache = rc
+			slog.Info("redis enabled", "addr", cfg.Redis.Addr)
+		}
+	}
+
 	// Services (business logic).
-	characterSvc := service.NewCharacterService(characterRepo, organizationRepo)
+	characterSvc := service.NewCharacterService(characterRepo, organizationRepo, appCache)
 	locationSvc := service.NewLocationService(locationRepo)
 	sceneSvc := service.NewSceneService(sceneRepo, characterRepo, locationRepo)
 	storySvc := service.NewStoryService(storyRepo)
@@ -125,6 +137,7 @@ func run() error {
 		handler.NewOrganizationHandler(organizationSvc),
 		handler.NewConflictHandler(conflictSvc),
 		cfg.UploadDir,
+		appCache,
 	)
 
 	// El binario sirve la API en /api/* y el frontend compilado en el resto.

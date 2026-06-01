@@ -21,6 +21,14 @@ type Config struct {
 	Google     GoogleConfig
 	AppBaseURL string
 	SMTP       SMTPConfig
+	Redis      RedisConfig
+}
+
+// RedisConfig holds the cache server settings. When Addr is empty, caching and
+// rate limiting are disabled (the app still runs).
+type RedisConfig struct {
+	Addr     string
+	Password string
 }
 
 // SMTPConfig holds the email server settings. When Host is empty, emails are
@@ -88,6 +96,10 @@ func Load() Config {
 			Host: env("SMTP_HOST", ""),
 			Port: env("SMTP_PORT", "1025"),
 			From: env("SMTP_FROM", "no-reply@story.local"),
+		},
+		Redis: RedisConfig{
+			Addr:     env("REDIS_ADDR", "localhost:6379"),
+			Password: env("REDIS_PASSWORD", ""),
 		},
 	}
 }

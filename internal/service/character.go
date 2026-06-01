@@ -5,22 +5,37 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"time"
 
 	"story-go-mysql/internal/apperror"
+	"story-go-mysql/internal/cache"
 	"story-go-mysql/internal/model"
 	"story-go-mysql/internal/repository"
 )
 
+// characterListPrefix namespaces the cached character-list entries so we can
+// invalidate them all at once after a write.
+const characterListPrefix = "characters:list:"
+
+// characterListTTL is how long a cached list stays fresh.
+const characterListTTL = 60 * time.Second
+
 // CharacterService implements the use cases for characters. It depends on the
-// organization repository to validate referenced organization IDs.
+// organization repository to validate referenced organization IDs, and on a
+// cache to speed up list reads (cache-aside).
 type CharacterService struct {
 	repo          *repository.CharacterRepository
 	organizations *repository.OrganizationRepository
+	cache         cache.Cache
 }
 
 // NewCharacterService wires a CharacterService to the repositories it needs.
-func NewCharacterService(repo *repository.CharacterRepository, organizations *repository.OrganizationRepository) *CharacterService {
-	return &CharacterService{repo: repo, organizations: organizations}
+// Pass cache.Noop{} to disable caching.
+func NewCharacterService(repo *repository.CharacterRepository, organizations *repository.OrganizationRepository, c cache.Cache) *CharacterService {
+	return &CharacterService{repo: repo, organizations: organizations, cache: c}
 }
 
 // Create validates the request, persists the character and returns it.
@@ -36,12 +51,26 @@ func (s *CharacterService) Create(ctx context.Context, req model.CharacterReques
 	if err != nil {
 		return model.Character{}, err
 	}
+	s.invalidateLists(ctx)
 	return s.repo.GetByID(ctx, id)
 }
 
-// List returns a page of characters matching the given params.
+// List returns a page of characters matching the given params, using the
+// cache-aside pattern: try the cache first, and on a miss read from MySQL and
+// store the result with a TTL.
 func (s *CharacterService) List(ctx context.Context, params model.ListParams) (model.Page[model.Character], error) {
 	p := params.Normalize()
+	key := fmt.Sprintf("%s%d:%d:%s", characterListPrefix, p.Page, p.PageSize, p.Query)
+
+	// 1) ¿Está en caché?
+	if data, ok, err := s.cache.Get(ctx, key); err == nil && ok {
+		var page model.Page[model.Character]
+		if json.Unmarshal(data, &page) == nil {
+			return page, nil
+		}
+	}
+
+	// 2) Miss: leer de MySQL.
 	total, err := s.repo.Count(ctx, p.Query)
 	if err != nil {
 		return model.Page[model.Character]{}, err
@@ -50,7 +79,23 @@ func (s *CharacterService) List(ctx context.Context, params model.ListParams) (m
 	if err != nil {
 		return model.Page[model.Character]{}, err
 	}
-	return model.Page[model.Character]{Items: items, Total: total, Page: p.Page, PageSize: p.PageSize}, nil
+	page := model.Page[model.Character]{Items: items, Total: total, Page: p.Page, PageSize: p.PageSize}
+
+	// 3) Guardar en caché con expiración (si falla, no pasa nada: ya tenemos el dato).
+	if data, err := json.Marshal(page); err == nil {
+		if err := s.cache.Set(ctx, key, data, characterListTTL); err != nil {
+			slog.Warn("no se pudo cachear la lista de personajes", "error", err)
+		}
+	}
+	return page, nil
+}
+
+// invalidateLists borra todas las listas de personajes cacheadas. Se llama tras
+// cualquier escritura para que nadie lea datos obsoletos.
+func (s *CharacterService) invalidateLists(ctx context.Context) {
+	if err := s.cache.DelByPrefix(ctx, characterListPrefix); err != nil {
+		slog.Warn("no se pudo invalidar la caché de personajes", "error", err)
+	}
 }
 
 // Get returns a single character by ID.
@@ -70,12 +115,17 @@ func (s *CharacterService) Update(ctx context.Context, id uint64, req model.Char
 	if err := s.repo.Update(ctx, id, req.Title, req.Text, organizationIDs); err != nil {
 		return model.Character{}, err
 	}
+	s.invalidateLists(ctx)
 	return s.repo.GetByID(ctx, id)
 }
 
 // Delete removes a character by ID.
 func (s *CharacterService) Delete(ctx context.Context, id uint64) error {
-	return s.repo.Delete(ctx, id)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
+	}
+	s.invalidateLists(ctx)
+	return nil
 }
 
 // SetAvatar stores the avatar path and returns the updated character.
@@ -83,6 +133,7 @@ func (s *CharacterService) SetAvatar(ctx context.Context, id uint64, path string
 	if err := s.repo.SetAvatar(ctx, id, path); err != nil {
 		return model.Character{}, err
 	}
+	s.invalidateLists(ctx)
 	return s.repo.GetByID(ctx, id)
 }
 

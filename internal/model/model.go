@@ -67,6 +67,7 @@ type Character struct {
 	ID            uint64         `json:"id"`
 	Title         string         `json:"title"`
 	Text          *string        `json:"text"`
+	AvatarPath    *string        `json:"avatarPath"`
 	Organizations []Organization `json:"organizations,omitempty"`
 	CreatedAt     time.Time      `json:"createdAt"`
 	UpdatedAt     time.Time      `json:"updatedAt"`
@@ -74,11 +75,12 @@ type Character struct {
 
 // Location is a place that can appear in scenes.
 type Location struct {
-	ID        uint64    `json:"id"`
-	Title     string    `json:"title"`
-	Text      *string   `json:"text"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID         uint64    `json:"id"`
+	Title      string    `json:"title"`
+	Text       *string   `json:"text"`
+	AvatarPath *string   `json:"avatarPath"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
 // Scene is a moment in the story that relates characters and locations.

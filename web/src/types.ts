@@ -24,6 +24,7 @@ export type Character = {
   id: number;
   title: string;
   text: string | null;
+  avatarPath: string | null;
   organizations?: Organization[];
   createdAt: string;
   updatedAt: string;
@@ -33,6 +34,7 @@ export type Location = {
   id: number;
   title: string;
   text: string | null;
+  avatarPath: string | null;
   createdAt: string;
   updatedAt: string;
 };

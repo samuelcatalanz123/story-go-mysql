@@ -78,6 +78,14 @@ func (s *CharacterService) Delete(ctx context.Context, id uint64) error {
 	return s.repo.Delete(ctx, id)
 }
 
+// SetAvatar stores the avatar path and returns the updated character.
+func (s *CharacterService) SetAvatar(ctx context.Context, id uint64, path string) (model.Character, error) {
+	if err := s.repo.SetAvatar(ctx, id, path); err != nil {
+		return model.Character{}, err
+	}
+	return s.repo.GetByID(ctx, id)
+}
+
 // validOrganizationIDs deduplicates the requested organization IDs and checks
 // that every one exists, returning a ValidationError otherwise.
 func (s *CharacterService) validOrganizationIDs(ctx context.Context, ids []uint64) ([]uint64, error) {

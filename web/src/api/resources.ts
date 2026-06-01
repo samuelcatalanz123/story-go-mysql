@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { apiFetch, apiUpload } from "./client";
 import type {
   Character,
   Location,
@@ -28,6 +28,11 @@ export const listCharacters = (args: ListArgs) =>
   apiFetch<Paged<Character>>(`/characters?${listQuery(args)}`);
 export const getCharacter = (id: number) =>
   apiFetch<Character>(`/characters/${id}`);
+export const uploadCharacterAvatar = (id: number, file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return apiUpload<Character>(`/characters/${id}/avatar`, form);
+};
 export const createCharacter = (body: CharacterRequest) =>
   apiFetch<Character>("/characters", { method: "POST", body: JSON.stringify(body) });
 export const updateCharacter = (id: number, body: CharacterRequest) =>
@@ -40,6 +45,11 @@ export const listLocations = (args: ListArgs) =>
   apiFetch<Paged<Location>>(`/locations?${listQuery(args)}`);
 export const getLocation = (id: number) =>
   apiFetch<Location>(`/locations/${id}`);
+export const uploadLocationAvatar = (id: number, file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return apiUpload<Location>(`/locations/${id}/avatar`, form);
+};
 export const createLocation = (body: LocationRequest) =>
   apiFetch<Location>("/locations", { method: "POST", body: JSON.stringify(body) });
 export const updateLocation = (id: number, body: LocationRequest) =>

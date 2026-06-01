@@ -48,6 +48,19 @@ export function CharactersPage() {
 
   const columns: Column<Character>[] = [
     { header: "ID", render: (c) => c.id },
+    {
+      header: "Avatar",
+      render: (c) =>
+        c.avatarPath ? (
+          <img
+            src={c.avatarPath}
+            alt={c.title}
+            style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 6 }}
+          />
+        ) : (
+          "—"
+        ),
+    },
     { header: "Título", render: (c) => <Link to={`/characters/${c.id}`}>{c.title}</Link> },
     { header: "Texto", render: (c) => c.text ?? "—" },
     {

@@ -17,12 +17,16 @@ func Router(
 	stories *StoryHandler,
 	organizations *OrganizationHandler,
 	conflicts *ConflictHandler,
+	uploadDir string,
 ) http.Handler {
 	mux := http.NewServeMux()
 
 	// Auth (public).
 	mux.HandleFunc("POST /auth/register", authH.Register)
 	mux.HandleFunc("POST /auth/login", authH.Login)
+
+	// Uploaded files served statically (public, read-only).
+	mux.Handle("GET /uploads/", http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadDir))))
 
 	// Stories: every route is private and scoped to the authenticated user.
 	mux.Handle("GET /stories", RequireAuth(tokens, http.HandlerFunc(stories.List)))
@@ -37,6 +41,7 @@ func Router(
 	mux.Handle("POST /characters", RequireAuth(tokens, http.HandlerFunc(characters.Create)))
 	mux.Handle("PUT /characters/{id}", RequireAuth(tokens, http.HandlerFunc(characters.Update)))
 	mux.Handle("DELETE /characters/{id}", RequireAuth(tokens, http.HandlerFunc(characters.Delete)))
+	mux.Handle("POST /characters/{id}/avatar", RequireAuth(tokens, http.HandlerFunc(characters.Avatar)))
 
 	// Locations.
 	mux.HandleFunc("GET /locations", locations.List)
@@ -44,6 +49,7 @@ func Router(
 	mux.Handle("POST /locations", RequireAuth(tokens, http.HandlerFunc(locations.Create)))
 	mux.Handle("PUT /locations/{id}", RequireAuth(tokens, http.HandlerFunc(locations.Update)))
 	mux.Handle("DELETE /locations/{id}", RequireAuth(tokens, http.HandlerFunc(locations.Delete)))
+	mux.Handle("POST /locations/{id}/avatar", RequireAuth(tokens, http.HandlerFunc(locations.Avatar)))
 
 	// Scenes.
 	mux.HandleFunc("GET /scenes", scenes.List)

@@ -54,10 +54,10 @@ func (r *CharacterRepository) Create(ctx context.Context, title string, text *st
 func (r *CharacterRepository) GetByID(ctx context.Context, id uint64) (model.Character, error) {
 	var c model.Character
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, title, text, created_at, updated_at
+		SELECT id, title, text, avatar_path, created_at, updated_at
 		FROM characters
 		WHERE id = ?
-	`, id).Scan(&c.ID, &c.Title, &c.Text, &c.CreatedAt, &c.UpdatedAt)
+	`, id).Scan(&c.ID, &c.Title, &c.Text, &c.AvatarPath, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		return model.Character{}, translate(err)
 	}
@@ -76,7 +76,7 @@ func (r *CharacterRepository) GetByID(ctx context.Context, id uint64) (model.Cha
 // which avoids the N+1 query problem.
 func (r *CharacterRepository) List(ctx context.Context, q string, limit, offset int) ([]model.Character, error) {
 	where, args := buildSearch(q)
-	query := "SELECT id, title, text, created_at, updated_at FROM characters " +
+	query := "SELECT id, title, text, avatar_path, created_at, updated_at FROM characters " +
 		where + "ORDER BY id ASC LIMIT ? OFFSET ?"
 	args = append(args, limit, offset)
 
@@ -90,7 +90,7 @@ func (r *CharacterRepository) List(ctx context.Context, q string, limit, offset 
 	ids := []uint64{}
 	for rows.Next() {
 		var c model.Character
-		if err := rows.Scan(&c.ID, &c.Title, &c.Text, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.Title, &c.Text, &c.AvatarPath, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, err
 		}
 		characters = append(characters, c)
@@ -164,6 +164,16 @@ func (r *CharacterRepository) Delete(ctx context.Context, id uint64) error {
 // ExistByIDs reports whether every given character ID exists.
 func (r *CharacterRepository) ExistByIDs(ctx context.Context, ids []uint64) (bool, error) {
 	return allExist(ctx, r.db, "characters", ids)
+}
+
+// SetAvatar stores the avatar path for a character, returning
+// apperror.ErrNotFound when the character does not exist.
+func (r *CharacterRepository) SetAvatar(ctx context.Context, id uint64, path string) error {
+	result, err := r.db.ExecContext(ctx, "UPDATE characters SET avatar_path = ? WHERE id = ?", path, id)
+	if err != nil {
+		return translate(err)
+	}
+	return requireAffected(result)
 }
 
 // organizationsByCharacterIDs returns, for the given character IDs, a map from

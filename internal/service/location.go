@@ -64,3 +64,11 @@ func (s *LocationService) Update(ctx context.Context, id uint64, req model.Locat
 func (s *LocationService) Delete(ctx context.Context, id uint64) error {
 	return s.repo.Delete(ctx, id)
 }
+
+// SetAvatar stores the avatar path and returns the updated location.
+func (s *LocationService) SetAvatar(ctx context.Context, id uint64, path string) (model.Location, error) {
+	if err := s.repo.SetAvatar(ctx, id, path); err != nil {
+		return model.Location{}, err
+	}
+	return s.repo.GetByID(ctx, id)
+}

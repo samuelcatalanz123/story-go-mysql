@@ -79,12 +79,13 @@ func run() error {
 	router := handler.Router(
 		tokenManager,
 		handler.NewAuthHandler(authSvc),
-		handler.NewCharacterHandler(characterSvc),
-		handler.NewLocationHandler(locationSvc),
+		handler.NewCharacterHandler(characterSvc, cfg.UploadDir),
+		handler.NewLocationHandler(locationSvc, cfg.UploadDir),
 		handler.NewSceneHandler(sceneSvc),
 		handler.NewStoryHandler(storySvc),
 		handler.NewOrganizationHandler(organizationSvc),
 		handler.NewConflictHandler(conflictSvc),
+		cfg.UploadDir,
 	)
 
 	// El binario sirve la API en /api/* y el frontend compilado en el resto.

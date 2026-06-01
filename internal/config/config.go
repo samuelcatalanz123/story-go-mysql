@@ -15,6 +15,7 @@ const insecureJWTSecret = "dev-insecure-secret-change-me"
 type Config struct {
 	ServerAddr string
 	WebDir     string
+	UploadDir  string
 	JWTSecret  string
 	DB         DBConfig
 }
@@ -49,6 +50,7 @@ func Load() Config {
 	return Config{
 		ServerAddr: serverAddr(),
 		WebDir:     env("WEB_DIR", "web/dist"),
+		UploadDir:  env("UPLOAD_DIR", "./uploads"),
 		JWTSecret:  env("JWT_SECRET", insecureJWTSecret),
 		DB: DBConfig{
 			User:     env("DB_USER", "root"),

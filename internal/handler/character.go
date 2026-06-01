@@ -12,12 +12,14 @@ const characterResource = "character"
 
 // CharacterHandler exposes the character endpoints.
 type CharacterHandler struct {
-	svc *service.CharacterService
+	svc       *service.CharacterService
+	uploadDir string
 }
 
-// NewCharacterHandler wires a CharacterHandler to its service.
-func NewCharacterHandler(svc *service.CharacterService) *CharacterHandler {
-	return &CharacterHandler{svc: svc}
+// NewCharacterHandler wires a CharacterHandler to its service and the
+// directory where uploaded avatars are stored.
+func NewCharacterHandler(svc *service.CharacterService, uploadDir string) *CharacterHandler {
+	return &CharacterHandler{svc: svc, uploadDir: uploadDir}
 }
 
 func (h *CharacterHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -84,4 +86,23 @@ func (h *CharacterHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	web.JSON(w, http.StatusOK, map[string]string{"message": "character deleted"})
+}
+
+// Avatar handles POST /characters/{id}/avatar: a multipart upload with a
+// "file" field. It stores the image and saves its public path on the character.
+func (h *CharacterHandler) Avatar(w http.ResponseWriter, r *http.Request) {
+	id, ok := parseID(w, r, characterResource)
+	if !ok {
+		return
+	}
+	relPath, ok := readUploadedImage(w, r, h.uploadDir, characterResource)
+	if !ok {
+		return
+	}
+	character, err := h.svc.SetAvatar(r.Context(), id, "/api/uploads/"+relPath)
+	if err != nil {
+		web.RespondError(w, characterResource, err)
+		return
+	}
+	web.JSON(w, http.StatusOK, character)
 }

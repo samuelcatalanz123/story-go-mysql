@@ -14,6 +14,7 @@ export function LocationsPage() {
       create={createLocation}
       update={updateLocation}
       remove={deleteLocation}
+      detailBase="/locations"
     />
   );
 }

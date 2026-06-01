@@ -34,6 +34,9 @@ type Props<T extends ResourceItem> = {
   create: (body: RequestBody) => Promise<T>;
   update: (id: number, body: RequestBody) => Promise<T>;
   remove: (id: number) => Promise<void>;
+  // Si se indica (ej. "/characters"), el título de cada fila será un enlace a
+  // su página de detalle: `${detailBase}/${id}`.
+  detailBase?: string;
 };
 
 type Editing<T> = null | "new" | T;
@@ -49,6 +52,7 @@ export function ResourcePage<T extends ResourceItem>({
   create,
   update,
   remove,
+  detailBase,
 }: Props<T>) {
   const { data, total, page, pageSize, loading, error, setQuery, setPage, reload } =
     usePagedList(list);
@@ -62,7 +66,11 @@ export function ResourcePage<T extends ResourceItem>({
 
   const columns: Column<T>[] = [
     { header: "ID", render: (r) => r.id },
-    { header: "Título", render: (r) => r.title },
+    {
+      header: "Título",
+      render: (r) =>
+        detailBase ? <Link to={`${detailBase}/${r.id}`}>{r.title}</Link> : r.title,
+    },
     { header: "Texto", render: (r) => r.text ?? "—" },
     { header: "Actualizado", render: (r) => formatDate(r.updatedAt) },
   ];

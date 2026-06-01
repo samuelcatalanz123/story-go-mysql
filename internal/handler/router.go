@@ -42,6 +42,9 @@ func Router(
 	authPost("POST /auth/oauth/google", authH.OAuthGoogle)
 	authPost("POST /auth/forgot-password", passwordH.Forgot)
 	authPost("POST /auth/reset-password", passwordH.Reset)
+	authPost("POST /auth/verify-email", authH.VerifyEmail)
+	// Reenviar verificación: requiere sesión iniciada.
+	mux.Handle("POST /auth/resend-verification", rl(RequireAuth(tokens, http.HandlerFunc(authH.ResendVerification))))
 
 	// GraphQL: un solo endpoint para queries/mutaciones, junto al REST.
 	// El playground (GraphiQL) es para explorar el API de forma interactiva.

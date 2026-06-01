@@ -128,6 +128,8 @@ func run() error {
 		slog.Info("email disabled (logging only; set SMTP_HOST to send)")
 	}
 	passwordResetSvc := service.NewPasswordResetService(userRepo, passwordResetRepo, mailer, cfg.AppBaseURL, time.Hour)
+	emailVerificationSvc := service.NewEmailVerificationService(
+		userRepo, repository.NewEmailVerificationRepository(db), mailer, cfg.AppBaseURL, 24*time.Hour)
 
 	// GraphQL: misma lógica (servicios) que el REST, expuesta en /graphql,
 	// con un playground interactivo en /playground.
@@ -138,7 +140,7 @@ func run() error {
 	// Handlers (HTTP) and router.
 	router := handler.Router(
 		tokenManager,
-		handler.NewAuthHandler(authSvc, oauthSvc, refreshTTL),
+		handler.NewAuthHandler(authSvc, oauthSvc, emailVerificationSvc, refreshTTL),
 		handler.NewPasswordHandler(passwordResetSvc),
 		handler.NewCharacterHandler(characterSvc, cfg.UploadDir),
 		handler.NewLocationHandler(locationSvc, cfg.UploadDir),

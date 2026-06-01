@@ -48,11 +48,15 @@ func (r *UserRepository) Create(ctx context.Context, email, passwordHash string)
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (model.User, string, error) {
 	var u model.User
 	var hash string
+	var verifiedAt sql.NullTime
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, email, COALESCE(password_hash, ''), created_at FROM users WHERE email = ?
-	`, email).Scan(&u.ID, &u.Email, &hash, &u.CreatedAt)
+		SELECT id, email, COALESCE(password_hash, ''), email_verified_at, created_at FROM users WHERE email = ?
+	`, email).Scan(&u.ID, &u.Email, &hash, &verifiedAt, &u.CreatedAt)
 	if err != nil {
 		return model.User{}, "", translate(err)
+	}
+	if verifiedAt.Valid {
+		u.EmailVerifiedAt = &verifiedAt.Time
 	}
 	return u, hash, nil
 }
@@ -96,11 +100,26 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, id uint64, password
 
 func (r *UserRepository) getByID(ctx context.Context, id uint64) (model.User, error) {
 	var u model.User
+	var verifiedAt sql.NullTime
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, email, created_at FROM users WHERE id = ?
-	`, id).Scan(&u.ID, &u.Email, &u.CreatedAt)
+		SELECT id, email, email_verified_at, created_at FROM users WHERE id = ?
+	`, id).Scan(&u.ID, &u.Email, &verifiedAt, &u.CreatedAt)
 	if err != nil {
 		return model.User{}, translate(err)
 	}
+	if verifiedAt.Valid {
+		u.EmailVerifiedAt = &verifiedAt.Time
+	}
 	return u, nil
+}
+
+// SetEmailVerified marks the user's email as verified (now), returning
+// apperror.ErrNotFound when the user does not exist.
+func (r *UserRepository) SetEmailVerified(ctx context.Context, id uint64) error {
+	result, err := r.db.ExecContext(ctx,
+		"UPDATE users SET email_verified_at = NOW() WHERE id = ?", id)
+	if err != nil {
+		return translate(err)
+	}
+	return requireAffected(result)
 }

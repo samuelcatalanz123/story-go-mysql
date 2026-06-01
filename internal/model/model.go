@@ -121,10 +121,12 @@ type SceneRequest struct {
 }
 
 // User is an authenticated account. The password hash is never serialized.
+// EmailVerifiedAt is nil until the user confirms their email.
 type User struct {
-	ID        uint64    `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID              uint64     `json:"id"`
+	Email           string     `json:"email"`
+	EmailVerifiedAt *time.Time `json:"emailVerifiedAt"`
+	CreatedAt       time.Time  `json:"createdAt"`
 }
 
 // RegisterRequest is the payload to create an account.

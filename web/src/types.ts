@@ -64,7 +64,12 @@ export type SceneRequest = {
   locationIds: number[];
 };
 
-export type User = { id: number; email: string; createdAt: string };
+export type User = {
+  id: number;
+  email: string;
+  emailVerifiedAt: string | null;
+  createdAt: string;
+};
 export type AuthResponse = { token: string; user: User };
 export type RegisterRequest = { email: string; password: string };
 export type LoginRequest = { email: string; password: string };

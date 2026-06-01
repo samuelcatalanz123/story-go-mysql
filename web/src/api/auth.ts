@@ -26,3 +26,12 @@ export const resetPassword = (token: string, newPassword: string) =>
     method: "POST",
     body: JSON.stringify({ token, newPassword }),
   });
+
+export const verifyEmail = (token: string) =>
+  apiFetch<MessageResponse>("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+
+export const resendVerification = () =>
+  apiFetch<MessageResponse>("/auth/resend-verification", { method: "POST" });

@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../ui/Button";
+import { resendVerification } from "../api/auth";
+import { useToast } from "../ui/Toast";
 import styles from "./Layout.module.css";
 
 function UserIcon() {
@@ -56,6 +58,21 @@ const links = [
 
 export function Layout() {
   const { user, isAuthenticated, logout } = useAuth();
+  const toast = useToast();
+
+  // Muestra el banner sólo si el usuario está logueado y su email NO está
+  // verificado todavía.
+  const needsVerification = isAuthenticated && user != null && user.emailVerifiedAt == null;
+
+  async function resend() {
+    try {
+      await resendVerification();
+      toast.success("Te reenviamos el enlace de verificación");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo reenviar");
+    }
+  }
+
   return (
     <div className={styles.shell}>
       <nav className={styles.sidebar}>
@@ -90,6 +107,28 @@ export function Layout() {
       </nav>
       <main className={styles.content}>
         <div className={styles.container}>
+          {needsVerification && (
+            <div
+              role="alert"
+              style={{
+                background: "#fef3c7",
+                border: "1px solid #fcd34d",
+                color: "#92400e",
+                borderRadius: 8,
+                padding: "12px 16px",
+                marginBottom: "var(--space-4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <span>📧 Verifica tu correo para confirmar tu cuenta.</span>
+              <Button variant="secondary" size="sm" onClick={() => void resend()}>
+                Reenviar enlace
+              </Button>
+            </div>
+          )}
           <Outlet />
         </div>
       </main>

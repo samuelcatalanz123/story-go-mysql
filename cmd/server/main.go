@@ -58,11 +58,13 @@ func run() error {
 	characterRepo := repository.NewCharacterRepository(db)
 	locationRepo := repository.NewLocationRepository(db)
 	sceneRepo := repository.NewSceneRepository(db)
+	storyRepo := repository.NewStoryRepository(db)
 
 	// Services (business logic).
 	characterSvc := service.NewCharacterService(characterRepo)
 	locationSvc := service.NewLocationService(locationRepo)
 	sceneSvc := service.NewSceneService(sceneRepo, characterRepo, locationRepo)
+	storySvc := service.NewStoryService(storyRepo)
 
 	// Auth: token manager + user repository + service.
 	tokenManager := auth.NewTokenManager(cfg.JWTSecret, 24*time.Hour)
@@ -76,6 +78,7 @@ func run() error {
 		handler.NewCharacterHandler(characterSvc),
 		handler.NewLocationHandler(locationSvc),
 		handler.NewSceneHandler(sceneSvc),
+		handler.NewStoryHandler(storySvc),
 	)
 
 	// El binario sirve la API en /api/* y el frontend compilado en el resto.

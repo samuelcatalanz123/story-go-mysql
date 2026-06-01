@@ -4,6 +4,23 @@ package model
 
 import "time"
 
+// Story is the top-level container that owns characters, locations and
+// scenes. Each story belongs to a single user.
+type Story struct {
+	ID        uint64    `json:"id"`
+	Title     string    `json:"title"`
+	Text      *string   `json:"text"`
+	UserID    uint64    `json:"userId"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// StoryRequest is the payload accepted when creating or updating a story.
+type StoryRequest struct {
+	Title string  `json:"title"`
+	Text  *string `json:"text"`
+}
+
 // Character is a person that can appear in scenes.
 type Character struct {
 	ID        uint64    `json:"id"`

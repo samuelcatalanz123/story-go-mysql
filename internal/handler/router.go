@@ -14,12 +14,20 @@ func Router(
 	characters *CharacterHandler,
 	locations *LocationHandler,
 	scenes *SceneHandler,
+	stories *StoryHandler,
 ) http.Handler {
 	mux := http.NewServeMux()
 
 	// Auth (public).
 	mux.HandleFunc("POST /auth/register", authH.Register)
 	mux.HandleFunc("POST /auth/login", authH.Login)
+
+	// Stories: every route is private and scoped to the authenticated user.
+	mux.Handle("GET /stories", RequireAuth(tokens, http.HandlerFunc(stories.List)))
+	mux.Handle("GET /stories/{id}", RequireAuth(tokens, http.HandlerFunc(stories.Get)))
+	mux.Handle("POST /stories", RequireAuth(tokens, http.HandlerFunc(stories.Create)))
+	mux.Handle("PUT /stories/{id}", RequireAuth(tokens, http.HandlerFunc(stories.Update)))
+	mux.Handle("DELETE /stories/{id}", RequireAuth(tokens, http.HandlerFunc(stories.Delete)))
 
 	// Characters: reads public, writes protected.
 	mux.HandleFunc("GET /characters", characters.List)

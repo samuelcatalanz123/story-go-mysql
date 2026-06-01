@@ -56,6 +56,11 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (model.Us
 	return u, hash, nil
 }
 
+// GetByID returns the user with the given ID (without the password hash).
+func (r *UserRepository) GetByID(ctx context.Context, id uint64) (model.User, error) {
+	return r.getByID(ctx, id)
+}
+
 func (r *UserRepository) getByID(ctx context.Context, id uint64) (model.User, error) {
 	var u model.User
 	err := r.db.QueryRowContext(ctx, `

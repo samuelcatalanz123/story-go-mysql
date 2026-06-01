@@ -21,9 +21,11 @@ func Router(
 ) http.Handler {
 	mux := http.NewServeMux()
 
-	// Auth (public).
+	// Auth (public). Refresh and logout rely on the HttpOnly refresh cookie.
 	mux.HandleFunc("POST /auth/register", authH.Register)
 	mux.HandleFunc("POST /auth/login", authH.Login)
+	mux.HandleFunc("POST /auth/refresh", authH.Refresh)
+	mux.HandleFunc("POST /auth/logout", authH.Logout)
 
 	// Uploaded files served statically (public, read-only).
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadDir))))

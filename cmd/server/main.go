@@ -61,6 +61,7 @@ func run() error {
 	storyRepo := repository.NewStoryRepository(db)
 	organizationRepo := repository.NewOrganizationRepository(db)
 	conflictRepo := repository.NewConflictRepository(db)
+	refreshRepo := repository.NewRefreshTokenRepository(db)
 
 	// Services (business logic).
 	characterSvc := service.NewCharacterService(characterRepo, organizationRepo)
@@ -70,15 +71,18 @@ func run() error {
 	organizationSvc := service.NewOrganizationService(organizationRepo)
 	conflictSvc := service.NewConflictService(conflictRepo)
 
-	// Auth: token manager + user repository + service.
-	tokenManager := auth.NewTokenManager(cfg.JWTSecret, 24*time.Hour)
+	// Auth: short-lived access token (15 min) + long-lived refresh token (30
+	// days) stored as a hash in the DB and sent to the client in an HttpOnly
+	// cookie.
+	const refreshTTL = 30 * 24 * time.Hour
+	tokenManager := auth.NewTokenManager(cfg.JWTSecret, 15*time.Minute)
 	userRepo := repository.NewUserRepository(db)
-	authSvc := service.NewAuthService(userRepo, tokenManager)
+	authSvc := service.NewAuthService(userRepo, refreshRepo, tokenManager, refreshTTL)
 
 	// Handlers (HTTP) and router.
 	router := handler.Router(
 		tokenManager,
-		handler.NewAuthHandler(authSvc),
+		handler.NewAuthHandler(authSvc, refreshTTL),
 		handler.NewCharacterHandler(characterSvc, cfg.UploadDir),
 		handler.NewLocationHandler(locationSvc, cfg.UploadDir),
 		handler.NewSceneHandler(sceneSvc),

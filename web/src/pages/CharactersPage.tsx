@@ -14,6 +14,7 @@ export function CharactersPage() {
       create={createCharacter}
       update={updateCharacter}
       remove={deleteCharacter}
+      detailBase="/characters"
     />
   );
 }

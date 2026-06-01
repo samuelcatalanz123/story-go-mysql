@@ -45,7 +45,7 @@ export function ScenesPage() {
 
   const columns: Column<Scene>[] = [
     { header: "ID", render: (s) => s.id },
-    { header: "Título", render: (s) => s.title },
+    { header: "Título", render: (s) => <Link to={`/scenes/${s.id}`}>{s.title}</Link> },
     { header: "Inicio", render: (s) => s.startTimeline },
     { header: "Fin", render: (s) => s.endTimeline },
     {

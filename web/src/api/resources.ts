@@ -22,6 +22,8 @@ function listQuery({ q, page, pageSize }: ListArgs): string {
 // --- Personajes ---
 export const listCharacters = (args: ListArgs) =>
   apiFetch<Paged<Character>>(`/characters?${listQuery(args)}`);
+export const getCharacter = (id: number) =>
+  apiFetch<Character>(`/characters/${id}`);
 export const createCharacter = (body: CharacterRequest) =>
   apiFetch<Character>("/characters", { method: "POST", body: JSON.stringify(body) });
 export const updateCharacter = (id: number, body: CharacterRequest) =>
@@ -32,6 +34,8 @@ export const deleteCharacter = (id: number) =>
 // --- Lugares ---
 export const listLocations = (args: ListArgs) =>
   apiFetch<Paged<Location>>(`/locations?${listQuery(args)}`);
+export const getLocation = (id: number) =>
+  apiFetch<Location>(`/locations/${id}`);
 export const createLocation = (body: LocationRequest) =>
   apiFetch<Location>("/locations", { method: "POST", body: JSON.stringify(body) });
 export const updateLocation = (id: number, body: LocationRequest) =>
@@ -42,6 +46,8 @@ export const deleteLocation = (id: number) =>
 // --- Escenas ---
 export const listScenes = (args: ListArgs) =>
   apiFetch<Paged<Scene>>(`/scenes?${listQuery(args)}`);
+export const getScene = (id: number) =>
+  apiFetch<Scene>(`/scenes/${id}`);
 export const createScene = (body: SceneRequest) =>
   apiFetch<Scene>("/scenes", { method: "POST", body: JSON.stringify(body) });
 export const updateScene = (id: number, body: SceneRequest) =>

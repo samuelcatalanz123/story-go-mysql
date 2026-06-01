@@ -11,14 +11,16 @@ import (
 	"story-go-mysql/internal/repository"
 )
 
-// CharacterService implements the use cases for characters.
+// CharacterService implements the use cases for characters. It depends on the
+// organization repository to validate referenced organization IDs.
 type CharacterService struct {
-	repo *repository.CharacterRepository
+	repo          *repository.CharacterRepository
+	organizations *repository.OrganizationRepository
 }
 
-// NewCharacterService wires a CharacterService to its repository.
-func NewCharacterService(repo *repository.CharacterRepository) *CharacterService {
-	return &CharacterService{repo: repo}
+// NewCharacterService wires a CharacterService to the repositories it needs.
+func NewCharacterService(repo *repository.CharacterRepository, organizations *repository.OrganizationRepository) *CharacterService {
+	return &CharacterService{repo: repo, organizations: organizations}
 }
 
 // Create validates the request, persists the character and returns it.
@@ -26,7 +28,11 @@ func (s *CharacterService) Create(ctx context.Context, req model.CharacterReques
 	if req.Title == "" {
 		return model.Character{}, apperror.Validation("title is required")
 	}
-	id, err := s.repo.Create(ctx, req.Title, req.Text)
+	organizationIDs, err := s.validOrganizationIDs(ctx, req.OrganizationIDs)
+	if err != nil {
+		return model.Character{}, err
+	}
+	id, err := s.repo.Create(ctx, req.Title, req.Text, organizationIDs)
 	if err != nil {
 		return model.Character{}, err
 	}
@@ -57,7 +63,11 @@ func (s *CharacterService) Update(ctx context.Context, id uint64, req model.Char
 	if req.Title == "" {
 		return model.Character{}, apperror.Validation("title is required")
 	}
-	if err := s.repo.Update(ctx, id, req.Title, req.Text); err != nil {
+	organizationIDs, err := s.validOrganizationIDs(ctx, req.OrganizationIDs)
+	if err != nil {
+		return model.Character{}, err
+	}
+	if err := s.repo.Update(ctx, id, req.Title, req.Text, organizationIDs); err != nil {
 		return model.Character{}, err
 	}
 	return s.repo.GetByID(ctx, id)
@@ -66,4 +76,18 @@ func (s *CharacterService) Update(ctx context.Context, id uint64, req model.Char
 // Delete removes a character by ID.
 func (s *CharacterService) Delete(ctx context.Context, id uint64) error {
 	return s.repo.Delete(ctx, id)
+}
+
+// validOrganizationIDs deduplicates the requested organization IDs and checks
+// that every one exists, returning a ValidationError otherwise.
+func (s *CharacterService) validOrganizationIDs(ctx context.Context, ids []uint64) ([]uint64, error) {
+	unique := uniqueIDs(ids)
+	exist, err := s.organizations.ExistByIDs(ctx, unique)
+	if err != nil {
+		return nil, err
+	}
+	if !exist {
+		return nil, apperror.Validation("one or more organizationIds do not exist")
+	}
+	return unique, nil
 }

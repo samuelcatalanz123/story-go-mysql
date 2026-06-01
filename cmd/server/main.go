@@ -62,7 +62,7 @@ func run() error {
 	organizationRepo := repository.NewOrganizationRepository(db)
 
 	// Services (business logic).
-	characterSvc := service.NewCharacterService(characterRepo)
+	characterSvc := service.NewCharacterService(characterRepo, organizationRepo)
 	locationSvc := service.NewLocationService(locationRepo)
 	sceneSvc := service.NewSceneService(sceneRepo, characterRepo, locationRepo)
 	storySvc := service.NewStoryService(storyRepo)

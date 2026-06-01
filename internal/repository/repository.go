@@ -55,14 +55,7 @@ func allExist(ctx context.Context, db *sql.DB, table string, ids []uint64) (bool
 		return true, nil
 	}
 
-	placeholders := strings.Repeat("?,", len(ids))
-	placeholders = placeholders[:len(placeholders)-1]
-
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		args[i] = id
-	}
-
+	placeholders, args := inPlaceholders(ids)
 	query := "SELECT COUNT(DISTINCT id) FROM " + table + " WHERE id IN (" + placeholders + ")"
 
 	var count int
@@ -70,6 +63,20 @@ func allExist(ctx context.Context, db *sql.DB, table string, ids []uint64) (bool
 		return false, err
 	}
 	return count == len(ids), nil
+}
+
+// inPlaceholders builds the "?,?,?" placeholder string and the matching args
+// slice for a SQL IN (...) clause. Callers must guard against an empty slice
+// (an empty IN () is invalid SQL).
+func inPlaceholders(ids []uint64) (string, []any) {
+	placeholders := strings.Repeat("?,", len(ids))
+	placeholders = placeholders[:len(placeholders)-1]
+
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	return placeholders, args
 }
 
 // buildSearch returns the WHERE clause (with a trailing space) and args for a

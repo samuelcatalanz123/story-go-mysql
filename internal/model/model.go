@@ -40,13 +40,16 @@ type OrganizationRequest struct {
 	StoryID *uint64 `json:"storyId"`
 }
 
-// Character is a person that can appear in scenes.
+// Character is a person that can appear in scenes. A character can belong to
+// several organizations (many-to-many). Organizations is omitted from the
+// JSON when not loaded (e.g. characters embedded inside a scene).
 type Character struct {
-	ID        uint64    `json:"id"`
-	Title     string    `json:"title"`
-	Text      *string   `json:"text"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID            uint64         `json:"id"`
+	Title         string         `json:"title"`
+	Text          *string        `json:"text"`
+	Organizations []Organization `json:"organizations,omitempty"`
+	CreatedAt     time.Time      `json:"createdAt"`
+	UpdatedAt     time.Time      `json:"updatedAt"`
 }
 
 // Location is a place that can appear in scenes.
@@ -71,10 +74,12 @@ type Scene struct {
 	UpdatedAt     time.Time   `json:"updatedAt"`
 }
 
-// CharacterRequest is the payload accepted when creating or updating a character.
+// CharacterRequest is the payload accepted when creating or updating a
+// character. OrganizationIDs sets the organizations the character belongs to.
 type CharacterRequest struct {
-	Title string  `json:"title"`
-	Text  *string `json:"text"`
+	Title           string   `json:"title"`
+	Text            *string  `json:"text"`
+	OrganizationIDs []uint64 `json:"organizationIds"`
 }
 
 // LocationRequest is the payload accepted when creating or updating a location.

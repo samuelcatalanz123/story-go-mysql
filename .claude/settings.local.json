@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(qiero decir que todas las personas de todo el mundo los vean mis proyectos)"
     ]
   }
 }

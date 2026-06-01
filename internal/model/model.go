@@ -4,22 +4,83 @@ package model
 
 import "time"
 
-// Character is a person that can appear in scenes.
-type Character struct {
+// Story is the top-level container that owns characters, locations and
+// scenes. Each story belongs to a single user.
+type Story struct {
 	ID        uint64    `json:"id"`
 	Title     string    `json:"title"`
 	Text      *string   `json:"text"`
+	UserID    uint64    `json:"userId"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-// Location is a place that can appear in scenes.
-type Location struct {
+// StoryRequest is the payload accepted when creating or updating a story.
+type StoryRequest struct {
+	Title string  `json:"title"`
+	Text  *string `json:"text"`
+}
+
+// Organization is a group (guild, government, crew) that characters can
+// belong to. It optionally belongs to a story.
+type Organization struct {
 	ID        uint64    `json:"id"`
 	Title     string    `json:"title"`
 	Text      *string   `json:"text"`
+	StoryID   *uint64   `json:"storyId"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// OrganizationRequest is the payload accepted when creating or updating an
+// organization.
+type OrganizationRequest struct {
+	Title   string  `json:"title"`
+	Text    *string `json:"text"`
+	StoryID *uint64 `json:"storyId"`
+}
+
+// Conflict is a confrontation (battle, dispute) that can take place in a
+// scene and belong to a story. Both relations are optional.
+type Conflict struct {
+	ID        uint64    `json:"id"`
+	Title     string    `json:"title"`
+	Text      *string   `json:"text"`
+	SceneID   *uint64   `json:"sceneId"`
+	StoryID   *uint64   `json:"storyId"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// ConflictRequest is the payload accepted when creating or updating a conflict.
+type ConflictRequest struct {
+	Title   string  `json:"title"`
+	Text    *string `json:"text"`
+	SceneID *uint64 `json:"sceneId"`
+	StoryID *uint64 `json:"storyId"`
+}
+
+// Character is a person that can appear in scenes. A character can belong to
+// several organizations (many-to-many). Organizations is omitted from the
+// JSON when not loaded (e.g. characters embedded inside a scene).
+type Character struct {
+	ID            uint64         `json:"id"`
+	Title         string         `json:"title"`
+	Text          *string        `json:"text"`
+	AvatarPath    *string        `json:"avatarPath"`
+	Organizations []Organization `json:"organizations,omitempty"`
+	CreatedAt     time.Time      `json:"createdAt"`
+	UpdatedAt     time.Time      `json:"updatedAt"`
+}
+
+// Location is a place that can appear in scenes.
+type Location struct {
+	ID         uint64    `json:"id"`
+	Title      string    `json:"title"`
+	Text       *string   `json:"text"`
+	AvatarPath *string   `json:"avatarPath"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
 // Scene is a moment in the story that relates characters and locations.
@@ -35,10 +96,12 @@ type Scene struct {
 	UpdatedAt     time.Time   `json:"updatedAt"`
 }
 
-// CharacterRequest is the payload accepted when creating or updating a character.
+// CharacterRequest is the payload accepted when creating or updating a
+// character. OrganizationIDs sets the organizations the character belongs to.
 type CharacterRequest struct {
-	Title string  `json:"title"`
-	Text  *string `json:"text"`
+	Title           string   `json:"title"`
+	Text            *string  `json:"text"`
+	OrganizationIDs []uint64 `json:"organizationIds"`
 }
 
 // LocationRequest is the payload accepted when creating or updating a location.
@@ -58,10 +121,12 @@ type SceneRequest struct {
 }
 
 // User is an authenticated account. The password hash is never serialized.
+// EmailVerifiedAt is nil until the user confirms their email.
 type User struct {
-	ID        uint64    `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID              uint64     `json:"id"`
+	Email           string     `json:"email"`
+	EmailVerifiedAt *time.Time `json:"emailVerifiedAt"`
+	CreatedAt       time.Time  `json:"createdAt"`
 }
 
 // RegisterRequest is the payload to create an account.

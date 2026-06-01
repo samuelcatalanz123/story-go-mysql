@@ -1,0 +1,3 @@
+ALTER TABLE characters ADD COLUMN avatar_path VARCHAR(512) NULL;
+
+ALTER TABLE locations ADD COLUMN avatar_path VARCHAR(512) NULL;

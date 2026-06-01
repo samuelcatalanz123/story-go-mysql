@@ -13,9 +13,16 @@ import (
 	"syscall"
 	"time"
 
+	gqlhandler "github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+
 	"story-go-mysql/internal/auth"
+	"story-go-mysql/internal/cache"
 	"story-go-mysql/internal/config"
+	"story-go-mysql/internal/email"
+	"story-go-mysql/internal/graph"
 	"story-go-mysql/internal/handler"
+	"story-go-mysql/internal/oauth"
 	"story-go-mysql/internal/repository"
 	"story-go-mysql/internal/service"
 	"story-go-mysql/internal/storage"
@@ -58,24 +65,93 @@ func run() error {
 	characterRepo := repository.NewCharacterRepository(db)
 	locationRepo := repository.NewLocationRepository(db)
 	sceneRepo := repository.NewSceneRepository(db)
+	storyRepo := repository.NewStoryRepository(db)
+	organizationRepo := repository.NewOrganizationRepository(db)
+	conflictRepo := repository.NewConflictRepository(db)
+	refreshRepo := repository.NewRefreshTokenRepository(db)
+	oauthRepo := repository.NewOAuthAccountRepository(db)
+	passwordResetRepo := repository.NewPasswordResetRepository(db)
+
+	// Cache: Redis when reachable, otherwise a no-op so the app keeps working.
+	var appCache cache.Cache = cache.Noop{}
+	if cfg.Redis.Addr != "" {
+		if rc, cacheErr := cache.NewRedis(context.Background(), cfg.Redis.Addr, cfg.Redis.Password); cacheErr != nil {
+			slog.Warn("redis unavailable; caching and rate limiting disabled", "error", cacheErr)
+		} else {
+			appCache = rc
+			slog.Info("redis enabled", "addr", cfg.Redis.Addr)
+		}
+	}
 
 	// Services (business logic).
-	characterSvc := service.NewCharacterService(characterRepo)
+	characterSvc := service.NewCharacterService(characterRepo, organizationRepo, appCache)
 	locationSvc := service.NewLocationService(locationRepo)
 	sceneSvc := service.NewSceneService(sceneRepo, characterRepo, locationRepo)
+	storySvc := service.NewStoryService(storyRepo)
+	organizationSvc := service.NewOrganizationService(organizationRepo)
+	conflictSvc := service.NewConflictService(conflictRepo)
 
-	// Auth: token manager + user repository + service.
-	tokenManager := auth.NewTokenManager(cfg.JWTSecret, 24*time.Hour)
+	// Auth: short-lived access token (15 min) + long-lived refresh token (30
+	// days) stored as a hash in the DB and sent to the client in an HttpOnly
+	// cookie.
+	const refreshTTL = 30 * 24 * time.Hour
+	tokenManager := auth.NewTokenManager(cfg.JWTSecret, 15*time.Minute)
 	userRepo := repository.NewUserRepository(db)
-	authSvc := service.NewAuthService(userRepo, tokenManager)
+	authSvc := service.NewAuthService(userRepo, refreshRepo, tokenManager, refreshTTL)
+
+	// "Sign in with Google" is optional: only enabled when credentials are set.
+	var googleAuth *oauth.GoogleAuthenticator
+	if cfg.Google.ClientID != "" {
+		googleAuth, err = oauth.NewGoogleAuthenticator(
+			context.Background(), cfg.Google.ClientID, cfg.Google.ClientSecret, cfg.Google.RedirectURI)
+		if err != nil {
+			return err
+		}
+		slog.Info("google login enabled")
+	} else {
+		slog.Info("google login disabled (set GOOGLE_CLIENT_ID to enable)")
+	}
+	// A nil *GoogleAuthenticator must be passed as a nil interface, so branch.
+	var oauthSvc *service.OAuthService
+	if googleAuth != nil {
+		oauthSvc = service.NewOAuthService(userRepo, oauthRepo, googleAuth, tokenManager, refreshRepo, refreshTTL)
+	} else {
+		oauthSvc = service.NewOAuthService(userRepo, oauthRepo, nil, tokenManager, refreshRepo, refreshTTL)
+	}
+
+	// Email sender: log-only in development, real SMTP when SMTP_HOST is set.
+	var mailer email.Sender = email.LogSender{}
+	if cfg.SMTP.Host != "" {
+		mailer = email.SMTPSender{Addr: cfg.SMTP.Host + ":" + cfg.SMTP.Port, From: cfg.SMTP.From}
+		slog.Info("email via SMTP", "addr", cfg.SMTP.Host+":"+cfg.SMTP.Port)
+	} else {
+		slog.Info("email disabled (logging only; set SMTP_HOST to send)")
+	}
+	passwordResetSvc := service.NewPasswordResetService(userRepo, passwordResetRepo, mailer, cfg.AppBaseURL, time.Hour)
+	emailVerificationSvc := service.NewEmailVerificationService(
+		userRepo, repository.NewEmailVerificationRepository(db), mailer, cfg.AppBaseURL, 24*time.Hour)
+
+	// GraphQL: misma lógica (servicios) que el REST, expuesta en /graphql,
+	// con un playground interactivo en /playground.
+	gqlResolver := &graph.Resolver{CharacterSvc: characterSvc, SceneSvc: sceneSvc}
+	gqlSrv := gqlhandler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: gqlResolver}))
+	pgSrv := playground.Handler("Story GraphQL", "/api/graphql")
 
 	// Handlers (HTTP) and router.
 	router := handler.Router(
 		tokenManager,
-		handler.NewAuthHandler(authSvc),
-		handler.NewCharacterHandler(characterSvc),
-		handler.NewLocationHandler(locationSvc),
+		handler.NewAuthHandler(authSvc, oauthSvc, emailVerificationSvc, refreshTTL),
+		handler.NewPasswordHandler(passwordResetSvc),
+		handler.NewCharacterHandler(characterSvc, cfg.UploadDir),
+		handler.NewLocationHandler(locationSvc, cfg.UploadDir),
 		handler.NewSceneHandler(sceneSvc),
+		handler.NewStoryHandler(storySvc),
+		handler.NewOrganizationHandler(organizationSvc),
+		handler.NewConflictHandler(conflictSvc),
+		cfg.UploadDir,
+		appCache,
+		gqlSrv,
+		pgSrv,
 	)
 
 	// El binario sirve la API en /api/* y el frontend compilado en el resto.

@@ -59,6 +59,8 @@ func RespondError(w http.ResponseWriter, resource string, err error) {
 		Error(w, http.StatusNotFound, resource+" not found")
 	case errors.Is(err, apperror.ErrDuplicateTitle):
 		Error(w, http.StatusConflict, "title already exists")
+	case errors.Is(err, apperror.ErrInvalidReference):
+		Error(w, http.StatusBadRequest, "referenced resource does not exist")
 	case errors.Is(err, apperror.ErrUnauthorized):
 		Error(w, http.StatusUnauthorized, "unauthorized")
 	case errors.Is(err, apperror.ErrDuplicateEmail):

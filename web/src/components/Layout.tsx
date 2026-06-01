@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "../ui/Button";
+import { resendVerification } from "../api/auth";
+import { useToast } from "../ui/Toast";
 import styles from "./Layout.module.css";
 
 function UserIcon() {
@@ -28,14 +30,49 @@ function FilmIcon() {
   );
 }
 
+function UsersIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2 20c0-3.5 3.5-5 7-5s7 1.5 7 5" />
+      <path d="M16 5a3.5 3.5 0 0 1 0 7M22 20c0-3-2-4.5-5-5" />
+    </svg>
+  );
+}
+function BoltIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
+    </svg>
+  );
+}
+
 const links = [
   { to: "/characters", label: "Personajes", icon: <UserIcon /> },
   { to: "/locations", label: "Lugares", icon: <PinIcon /> },
   { to: "/scenes", label: "Escenas", icon: <FilmIcon /> },
+  { to: "/organizations", label: "Organizaciones", icon: <UsersIcon /> },
+  { to: "/conflicts", label: "Conflictos", icon: <BoltIcon /> },
+  { to: "/graphql-demo", label: "GraphQL", icon: <BoltIcon /> },
 ];
 
 export function Layout() {
   const { user, isAuthenticated, logout } = useAuth();
+  const toast = useToast();
+
+  // Muestra el banner sólo si el usuario está logueado y su email NO está
+  // verificado todavía.
+  const needsVerification = isAuthenticated && user != null && user.emailVerifiedAt == null;
+
+  async function resend() {
+    try {
+      await resendVerification();
+      toast.success("Te reenviamos el enlace de verificación");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo reenviar");
+    }
+  }
+
   return (
     <div className={styles.shell}>
       <nav className={styles.sidebar}>
@@ -70,6 +107,28 @@ export function Layout() {
       </nav>
       <main className={styles.content}>
         <div className={styles.container}>
+          {needsVerification && (
+            <div
+              role="alert"
+              style={{
+                background: "#fef3c7",
+                border: "1px solid #fcd34d",
+                color: "#92400e",
+                borderRadius: 8,
+                padding: "12px 16px",
+                marginBottom: "var(--space-4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <span>📧 Verifica tu correo para confirmar tu cuenta.</span>
+              <Button variant="secondary" size="sm" onClick={() => void resend()}>
+                Reenviar enlace
+              </Button>
+            </div>
+          )}
           <Outlet />
         </div>
       </main>

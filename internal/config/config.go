@@ -15,8 +15,36 @@ const insecureJWTSecret = "dev-insecure-secret-change-me"
 type Config struct {
 	ServerAddr string
 	WebDir     string
+	UploadDir  string
 	JWTSecret  string
 	DB         DBConfig
+	Google     GoogleConfig
+	AppBaseURL string
+	SMTP       SMTPConfig
+	Redis      RedisConfig
+}
+
+// RedisConfig holds the cache server settings. When Addr is empty, caching and
+// rate limiting are disabled (the app still runs).
+type RedisConfig struct {
+	Addr     string
+	Password string
+}
+
+// SMTPConfig holds the email server settings. When Host is empty, emails are
+// just logged (development) instead of sent.
+type SMTPConfig struct {
+	Host string
+	Port string
+	From string
+}
+
+// GoogleConfig holds the "Sign in with Google" OAuth credentials. When
+// ClientID is empty, Google login is disabled (the server still runs).
+type GoogleConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
 }
 
 // UsesInsecureJWTSecret reports whether JWT_SECRET was left at the public
@@ -49,6 +77,7 @@ func Load() Config {
 	return Config{
 		ServerAddr: serverAddr(),
 		WebDir:     env("WEB_DIR", "web/dist"),
+		UploadDir:  env("UPLOAD_DIR", "./uploads"),
 		JWTSecret:  env("JWT_SECRET", insecureJWTSecret),
 		DB: DBConfig{
 			User:     env("DB_USER", "root"),
@@ -56,6 +85,21 @@ func Load() Config {
 			Host:     env("DB_HOST", "127.0.0.1"),
 			Port:     env("DB_PORT", "3306"),
 			Name:     env("DB_NAME", "story_go_db"),
+		},
+		Google: GoogleConfig{
+			ClientID:     env("GOOGLE_CLIENT_ID", ""),
+			ClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
+			RedirectURI:  env("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/oauth/callback"),
+		},
+		AppBaseURL: env("APP_BASE_URL", "http://localhost:8090"),
+		SMTP: SMTPConfig{
+			Host: env("SMTP_HOST", ""),
+			Port: env("SMTP_PORT", "1025"),
+			From: env("SMTP_FROM", "no-reply@story.local"),
+		},
+		Redis: RedisConfig{
+			Addr:     env("REDIS_ADDR", "localhost:6379"),
+			Password: env("REDIS_PASSWORD", ""),
 		},
 	}
 }

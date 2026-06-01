@@ -37,10 +37,10 @@ func (r *LocationRepository) Create(ctx context.Context, title string, text *str
 func (r *LocationRepository) GetByID(ctx context.Context, id uint64) (model.Location, error) {
 	var l model.Location
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, title, text, created_at, updated_at
+		SELECT id, title, text, avatar_path, created_at, updated_at
 		FROM locations
 		WHERE id = ?
-	`, id).Scan(&l.ID, &l.Title, &l.Text, &l.CreatedAt, &l.UpdatedAt)
+	`, id).Scan(&l.ID, &l.Title, &l.Text, &l.AvatarPath, &l.CreatedAt, &l.UpdatedAt)
 	if err != nil {
 		return model.Location{}, translate(err)
 	}
@@ -50,7 +50,7 @@ func (r *LocationRepository) GetByID(ctx context.Context, id uint64) (model.Loca
 // List returns a page of locations matching q, ordered by ID.
 func (r *LocationRepository) List(ctx context.Context, q string, limit, offset int) ([]model.Location, error) {
 	where, args := buildSearch(q)
-	query := "SELECT id, title, text, created_at, updated_at FROM locations " +
+	query := "SELECT id, title, text, avatar_path, created_at, updated_at FROM locations " +
 		where + "ORDER BY id ASC LIMIT ? OFFSET ?"
 	args = append(args, limit, offset)
 
@@ -63,7 +63,7 @@ func (r *LocationRepository) List(ctx context.Context, q string, limit, offset i
 	locations := []model.Location{}
 	for rows.Next() {
 		var l model.Location
-		if err := rows.Scan(&l.ID, &l.Title, &l.Text, &l.CreatedAt, &l.UpdatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.Title, &l.Text, &l.AvatarPath, &l.CreatedAt, &l.UpdatedAt); err != nil {
 			return nil, err
 		}
 		locations = append(locations, l)
@@ -107,4 +107,14 @@ func (r *LocationRepository) Delete(ctx context.Context, id uint64) error {
 // ExistByIDs reports whether every given location ID exists.
 func (r *LocationRepository) ExistByIDs(ctx context.Context, ids []uint64) (bool, error) {
 	return allExist(ctx, r.db, "locations", ids)
+}
+
+// SetAvatar stores the avatar path for a location, returning
+// apperror.ErrNotFound when the location does not exist.
+func (r *LocationRepository) SetAvatar(ctx context.Context, id uint64, path string) error {
+	result, err := r.db.ExecContext(ctx, "UPDATE locations SET avatar_path = ? WHERE id = ?", path, id)
+	if err != nil {
+		return translate(err)
+	}
+	return requireAffected(result)
 }

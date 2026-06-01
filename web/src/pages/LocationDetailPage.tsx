@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getLocation } from "../api/resources";
+import { getLocation, uploadLocationAvatar } from "../api/resources";
 import { ApiError } from "../api/client";
 import type { Location } from "../types";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { AvatarUploader } from "../components/AvatarUploader";
 import { PageHeader } from "../ui/PageHeader";
 import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
+import { useAuth } from "../auth/AuthContext";
 import { NotFound } from "./NotFound";
 import styles from "./DetailPage.module.css";
 
@@ -18,6 +20,7 @@ function formatDate(value: string): string {
 
 export function LocationDetailPage() {
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -82,6 +85,12 @@ export function LocationDetailPage() {
             <Button variant="secondary">← Volver</Button>
           </Link>
         }
+      />
+
+      <AvatarUploader
+        avatarPath={location.avatarPath}
+        canEdit={isAuthenticated}
+        onUpload={(file) => uploadLocationAvatar(location.id, file)}
       />
 
       <dl className={styles.fields}>

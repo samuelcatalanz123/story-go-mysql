@@ -6,8 +6,15 @@ import { LocationsPage } from "./pages/LocationsPage";
 import { LocationDetailPage } from "./pages/LocationDetailPage";
 import { ScenesPage } from "./pages/ScenesPage";
 import { SceneDetailPage } from "./pages/SceneDetailPage";
+import { OrganizationsPage } from "./pages/OrganizationsPage";
+import { ConflictsPage } from "./pages/ConflictsPage";
+import { GraphQLDemoPage } from "./pages/GraphQLDemoPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { OAuthCallbackPage } from "./pages/OAuthCallbackPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { NotFound } from "./pages/NotFound";
 
 export default function App() {
@@ -15,6 +22,10 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/auth/oauth/callback" element={<OAuthCallbackPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Navigate to="/characters" replace />} />
         <Route path="characters" element={<CharactersPage />} />
@@ -23,6 +34,9 @@ export default function App() {
         <Route path="locations/:id" element={<LocationDetailPage />} />
         <Route path="scenes" element={<ScenesPage />} />
         <Route path="scenes/:id" element={<SceneDetailPage />} />
+        <Route path="organizations" element={<OrganizationsPage />} />
+        <Route path="conflicts" element={<ConflictsPage />} />
+        <Route path="graphql-demo" element={<GraphQLDemoPage />} />
         {/* Ruta comodín: cualquier URL que no coincida arriba cae aquí (404). */}
         <Route path="*" element={<NotFound />} />
       </Route>

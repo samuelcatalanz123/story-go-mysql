@@ -2,8 +2,10 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"story-go-mysql/internal/auth"
+	"story-go-mysql/internal/cache"
 )
 
 // Router builds the HTTP routing table. GET routes are public; write routes
@@ -11,15 +13,53 @@ import (
 func Router(
 	tokens *auth.TokenManager,
 	authH *AuthHandler,
+	passwordH *PasswordHandler,
 	characters *CharacterHandler,
 	locations *LocationHandler,
 	scenes *SceneHandler,
+	stories *StoryHandler,
+	organizations *OrganizationHandler,
+	conflicts *ConflictHandler,
+	uploadDir string,
+	c cache.Cache,
+	graphqlSrv http.Handler,
+	playgroundSrv http.Handler,
 ) http.Handler {
 	mux := http.NewServeMux()
 
-	// Auth (public).
-	mux.HandleFunc("POST /auth/register", authH.Register)
-	mux.HandleFunc("POST /auth/login", authH.Login)
+	// Rate limit the auth routes: max 10 requests per IP per minute. Protects
+	// against brute-force login / password-reset spam.
+	rl := RateLimit(c, 10, time.Minute)
+	authPost := func(pattern string, h http.HandlerFunc) {
+		mux.Handle(pattern, rl(h))
+	}
+
+	// Auth (public, rate-limited). Refresh/logout rely on the HttpOnly cookie.
+	authPost("POST /auth/register", authH.Register)
+	authPost("POST /auth/login", authH.Login)
+	authPost("POST /auth/refresh", authH.Refresh)
+	authPost("POST /auth/logout", authH.Logout)
+	authPost("POST /auth/oauth/google", authH.OAuthGoogle)
+	authPost("POST /auth/forgot-password", passwordH.Forgot)
+	authPost("POST /auth/reset-password", passwordH.Reset)
+	authPost("POST /auth/verify-email", authH.VerifyEmail)
+	// Reenviar verificación: requiere sesión iniciada.
+	mux.Handle("POST /auth/resend-verification", rl(RequireAuth(tokens, http.HandlerFunc(authH.ResendVerification))))
+
+	// GraphQL: un solo endpoint para queries/mutaciones, junto al REST.
+	// El playground (GraphiQL) es para explorar el API de forma interactiva.
+	mux.Handle("/graphql", graphqlSrv)
+	mux.Handle("GET /playground", playgroundSrv)
+
+	// Uploaded files served statically (public, read-only).
+	mux.Handle("GET /uploads/", http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadDir))))
+
+	// Stories: every route is private and scoped to the authenticated user.
+	mux.Handle("GET /stories", RequireAuth(tokens, http.HandlerFunc(stories.List)))
+	mux.Handle("GET /stories/{id}", RequireAuth(tokens, http.HandlerFunc(stories.Get)))
+	mux.Handle("POST /stories", RequireAuth(tokens, http.HandlerFunc(stories.Create)))
+	mux.Handle("PUT /stories/{id}", RequireAuth(tokens, http.HandlerFunc(stories.Update)))
+	mux.Handle("DELETE /stories/{id}", RequireAuth(tokens, http.HandlerFunc(stories.Delete)))
 
 	// Characters: reads public, writes protected.
 	mux.HandleFunc("GET /characters", characters.List)
@@ -27,6 +67,7 @@ func Router(
 	mux.Handle("POST /characters", RequireAuth(tokens, http.HandlerFunc(characters.Create)))
 	mux.Handle("PUT /characters/{id}", RequireAuth(tokens, http.HandlerFunc(characters.Update)))
 	mux.Handle("DELETE /characters/{id}", RequireAuth(tokens, http.HandlerFunc(characters.Delete)))
+	mux.Handle("POST /characters/{id}/avatar", RequireAuth(tokens, http.HandlerFunc(characters.Avatar)))
 
 	// Locations.
 	mux.HandleFunc("GET /locations", locations.List)
@@ -34,6 +75,7 @@ func Router(
 	mux.Handle("POST /locations", RequireAuth(tokens, http.HandlerFunc(locations.Create)))
 	mux.Handle("PUT /locations/{id}", RequireAuth(tokens, http.HandlerFunc(locations.Update)))
 	mux.Handle("DELETE /locations/{id}", RequireAuth(tokens, http.HandlerFunc(locations.Delete)))
+	mux.Handle("POST /locations/{id}/avatar", RequireAuth(tokens, http.HandlerFunc(locations.Avatar)))
 
 	// Scenes.
 	mux.HandleFunc("GET /scenes", scenes.List)
@@ -41,6 +83,20 @@ func Router(
 	mux.Handle("POST /scenes", RequireAuth(tokens, http.HandlerFunc(scenes.Create)))
 	mux.Handle("PUT /scenes/{id}", RequireAuth(tokens, http.HandlerFunc(scenes.Update)))
 	mux.Handle("DELETE /scenes/{id}", RequireAuth(tokens, http.HandlerFunc(scenes.Delete)))
+
+	// Organizations: reads public, writes protected.
+	mux.HandleFunc("GET /organizations", organizations.List)
+	mux.HandleFunc("GET /organizations/{id}", organizations.Get)
+	mux.Handle("POST /organizations", RequireAuth(tokens, http.HandlerFunc(organizations.Create)))
+	mux.Handle("PUT /organizations/{id}", RequireAuth(tokens, http.HandlerFunc(organizations.Update)))
+	mux.Handle("DELETE /organizations/{id}", RequireAuth(tokens, http.HandlerFunc(organizations.Delete)))
+
+	// Conflicts: reads public, writes protected.
+	mux.HandleFunc("GET /conflicts", conflicts.List)
+	mux.HandleFunc("GET /conflicts/{id}", conflicts.Get)
+	mux.Handle("POST /conflicts", RequireAuth(tokens, http.HandlerFunc(conflicts.Create)))
+	mux.Handle("PUT /conflicts/{id}", RequireAuth(tokens, http.HandlerFunc(conflicts.Update)))
+	mux.Handle("DELETE /conflicts/{id}", RequireAuth(tokens, http.HandlerFunc(conflicts.Delete)))
 
 	return mux
 }

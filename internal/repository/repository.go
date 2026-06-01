@@ -14,8 +14,11 @@ import (
 	"story-go-mysql/internal/apperror"
 )
 
-// mysqlDuplicateEntry is the MySQL error number for a unique-key violation.
-const mysqlDuplicateEntry = 1062
+// MySQL error numbers we map to domain errors.
+const (
+	mysqlDuplicateEntry  = 1062 // unique-key violation
+	mysqlForeignKeyError = 1452 // foreign-key constraint failure (bad reference)
+)
 
 // translate maps low-level driver errors to domain errors. It returns the
 // original error unchanged when no mapping applies.
@@ -27,8 +30,13 @@ func translate(err error) error {
 		return apperror.ErrNotFound
 	}
 	var mysqlErr *mysql.MySQLError
-	if errors.As(err, &mysqlErr) && mysqlErr.Number == mysqlDuplicateEntry {
-		return apperror.ErrDuplicateTitle
+	if errors.As(err, &mysqlErr) {
+		switch mysqlErr.Number {
+		case mysqlDuplicateEntry:
+			return apperror.ErrDuplicateTitle
+		case mysqlForeignKeyError:
+			return apperror.ErrInvalidReference
+		}
 	}
 	return err
 }
@@ -55,14 +63,7 @@ func allExist(ctx context.Context, db *sql.DB, table string, ids []uint64) (bool
 		return true, nil
 	}
 
-	placeholders := strings.Repeat("?,", len(ids))
-	placeholders = placeholders[:len(placeholders)-1]
-
-	args := make([]any, len(ids))
-	for i, id := range ids {
-		args[i] = id
-	}
-
+	placeholders, args := inPlaceholders(ids)
 	query := "SELECT COUNT(DISTINCT id) FROM " + table + " WHERE id IN (" + placeholders + ")"
 
 	var count int
@@ -70,6 +71,20 @@ func allExist(ctx context.Context, db *sql.DB, table string, ids []uint64) (bool
 		return false, err
 	}
 	return count == len(ids), nil
+}
+
+// inPlaceholders builds the "?,?,?" placeholder string and the matching args
+// slice for a SQL IN (...) clause. Callers must guard against an empty slice
+// (an empty IN () is invalid SQL).
+func inPlaceholders(ids []uint64) (string, []any) {
+	placeholders := strings.Repeat("?,", len(ids))
+	placeholders = placeholders[:len(placeholders)-1]
+
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	return placeholders, args
 }
 
 // buildSearch returns the WHERE clause (with a trailing space) and args for a

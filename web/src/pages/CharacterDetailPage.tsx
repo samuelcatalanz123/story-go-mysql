@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getCharacter } from "../api/resources";
+import { getCharacter, uploadCharacterAvatar } from "../api/resources";
 import { ApiError } from "../api/client";
 import type { Character } from "../types";
 import { Breadcrumbs } from "../components/Breadcrumbs";
+import { AvatarUploader } from "../components/AvatarUploader";
 import { PageHeader } from "../ui/PageHeader";
 import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
+import { useAuth } from "../auth/AuthContext";
 import { NotFound } from "./NotFound";
 import styles from "./DetailPage.module.css";
 
@@ -20,6 +22,7 @@ export function CharacterDetailPage() {
   // useParams() lee los valores dinámicos de la URL. Como la ruta es
   // "/characters/:id", aquí `id` es el texto que venga después de la barra.
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
 
   // 4 estados para cubrir todo lo que puede pasar al pedir datos:
   const [character, setCharacter] = useState<Character | null>(null);
@@ -92,6 +95,12 @@ export function CharacterDetailPage() {
             <Button variant="secondary">← Volver</Button>
           </Link>
         }
+      />
+
+      <AvatarUploader
+        avatarPath={character.avatarPath}
+        canEdit={isAuthenticated}
+        onUpload={(file) => uploadCharacterAvatar(character.id, file)}
       />
 
       <dl className={styles.fields}>

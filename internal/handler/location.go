@@ -12,12 +12,14 @@ const locationResource = "location"
 
 // LocationHandler exposes the location endpoints.
 type LocationHandler struct {
-	svc *service.LocationService
+	svc       *service.LocationService
+	uploadDir string
 }
 
-// NewLocationHandler wires a LocationHandler to its service.
-func NewLocationHandler(svc *service.LocationService) *LocationHandler {
-	return &LocationHandler{svc: svc}
+// NewLocationHandler wires a LocationHandler to its service and the directory
+// where uploaded avatars are stored.
+func NewLocationHandler(svc *service.LocationService, uploadDir string) *LocationHandler {
+	return &LocationHandler{svc: svc, uploadDir: uploadDir}
 }
 
 func (h *LocationHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -84,4 +86,23 @@ func (h *LocationHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	web.JSON(w, http.StatusOK, map[string]string{"message": "location deleted"})
+}
+
+// Avatar handles POST /locations/{id}/avatar: a multipart upload with a
+// "file" field. It stores the image and saves its public path on the location.
+func (h *LocationHandler) Avatar(w http.ResponseWriter, r *http.Request) {
+	id, ok := parseID(w, r, locationResource)
+	if !ok {
+		return
+	}
+	relPath, ok := readUploadedImage(w, r, h.uploadDir, locationResource)
+	if !ok {
+		return
+	}
+	location, err := h.svc.SetAvatar(r.Context(), id, "/api/uploads/"+relPath)
+	if err != nil {
+		web.RespondError(w, locationResource, err)
+		return
+	}
+	web.JSON(w, http.StatusOK, location)
 }

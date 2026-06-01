@@ -1,11 +1,15 @@
-import { apiFetch } from "./client";
+import { apiFetch, apiUpload } from "./client";
 import type {
   Character,
   Location,
   Scene,
+  Organization,
+  Conflict,
   CharacterRequest,
   LocationRequest,
   SceneRequest,
+  OrganizationRequest,
+  ConflictRequest,
   Paged,
 } from "../types";
 
@@ -24,6 +28,11 @@ export const listCharacters = (args: ListArgs) =>
   apiFetch<Paged<Character>>(`/characters?${listQuery(args)}`);
 export const getCharacter = (id: number) =>
   apiFetch<Character>(`/characters/${id}`);
+export const uploadCharacterAvatar = (id: number, file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return apiUpload<Character>(`/characters/${id}/avatar`, form);
+};
 export const createCharacter = (body: CharacterRequest) =>
   apiFetch<Character>("/characters", { method: "POST", body: JSON.stringify(body) });
 export const updateCharacter = (id: number, body: CharacterRequest) =>
@@ -36,6 +45,11 @@ export const listLocations = (args: ListArgs) =>
   apiFetch<Paged<Location>>(`/locations?${listQuery(args)}`);
 export const getLocation = (id: number) =>
   apiFetch<Location>(`/locations/${id}`);
+export const uploadLocationAvatar = (id: number, file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return apiUpload<Location>(`/locations/${id}/avatar`, form);
+};
 export const createLocation = (body: LocationRequest) =>
   apiFetch<Location>("/locations", { method: "POST", body: JSON.stringify(body) });
 export const updateLocation = (id: number, body: LocationRequest) =>
@@ -55,6 +69,30 @@ export const updateScene = (id: number, body: SceneRequest) =>
 export const deleteScene = (id: number) =>
   apiFetch<void>(`/scenes/${id}`, { method: "DELETE" });
 
+// --- Organizaciones ---
+export const listOrganizations = (args: ListArgs) =>
+  apiFetch<Paged<Organization>>(`/organizations?${listQuery(args)}`);
+export const getOrganization = (id: number) =>
+  apiFetch<Organization>(`/organizations/${id}`);
+export const createOrganization = (body: OrganizationRequest) =>
+  apiFetch<Organization>("/organizations", { method: "POST", body: JSON.stringify(body) });
+export const updateOrganization = (id: number, body: OrganizationRequest) =>
+  apiFetch<Organization>(`/organizations/${id}`, { method: "PUT", body: JSON.stringify(body) });
+export const deleteOrganization = (id: number) =>
+  apiFetch<void>(`/organizations/${id}`, { method: "DELETE" });
+
+// --- Conflictos ---
+export const listConflicts = (args: ListArgs) =>
+  apiFetch<Paged<Conflict>>(`/conflicts?${listQuery(args)}`);
+export const getConflict = (id: number) =>
+  apiFetch<Conflict>(`/conflicts/${id}`);
+export const createConflict = (body: ConflictRequest) =>
+  apiFetch<Conflict>("/conflicts", { method: "POST", body: JSON.stringify(body) });
+export const updateConflict = (id: number, body: ConflictRequest) =>
+  apiFetch<Conflict>(`/conflicts/${id}`, { method: "PUT", body: JSON.stringify(body) });
+export const deleteConflict = (id: number) =>
+  apiFetch<void>(`/conflicts/${id}`, { method: "DELETE" });
+
 // Helpers que traen TODOS los elementos (para los desplegables del formulario
 // de escenas). El backend limita pageSize a 100, así que paginamos hasta
 // agotar el total en vez de pedir una sola página enorme.
@@ -73,3 +111,4 @@ async function fetchAll<T>(loader: (args: ListArgs) => Promise<Paged<T>>): Promi
 
 export const listAllCharacters = () => fetchAll(listCharacters);
 export const listAllLocations = () => fetchAll(listLocations);
+export const listAllOrganizations = () => fetchAll(listOrganizations);

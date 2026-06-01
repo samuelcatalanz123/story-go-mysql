@@ -16,6 +16,7 @@ import (
 	"story-go-mysql/internal/auth"
 	"story-go-mysql/internal/config"
 	"story-go-mysql/internal/handler"
+	"story-go-mysql/internal/oauth"
 	"story-go-mysql/internal/repository"
 	"story-go-mysql/internal/service"
 	"story-go-mysql/internal/storage"
@@ -62,6 +63,7 @@ func run() error {
 	organizationRepo := repository.NewOrganizationRepository(db)
 	conflictRepo := repository.NewConflictRepository(db)
 	refreshRepo := repository.NewRefreshTokenRepository(db)
+	oauthRepo := repository.NewOAuthAccountRepository(db)
 
 	// Services (business logic).
 	characterSvc := service.NewCharacterService(characterRepo, organizationRepo)
@@ -79,10 +81,30 @@ func run() error {
 	userRepo := repository.NewUserRepository(db)
 	authSvc := service.NewAuthService(userRepo, refreshRepo, tokenManager, refreshTTL)
 
+	// "Sign in with Google" is optional: only enabled when credentials are set.
+	var googleAuth *oauth.GoogleAuthenticator
+	if cfg.Google.ClientID != "" {
+		googleAuth, err = oauth.NewGoogleAuthenticator(
+			context.Background(), cfg.Google.ClientID, cfg.Google.ClientSecret, cfg.Google.RedirectURI)
+		if err != nil {
+			return err
+		}
+		slog.Info("google login enabled")
+	} else {
+		slog.Info("google login disabled (set GOOGLE_CLIENT_ID to enable)")
+	}
+	// A nil *GoogleAuthenticator must be passed as a nil interface, so branch.
+	var oauthSvc *service.OAuthService
+	if googleAuth != nil {
+		oauthSvc = service.NewOAuthService(userRepo, oauthRepo, googleAuth, tokenManager, refreshRepo, refreshTTL)
+	} else {
+		oauthSvc = service.NewOAuthService(userRepo, oauthRepo, nil, tokenManager, refreshRepo, refreshTTL)
+	}
+
 	// Handlers (HTTP) and router.
 	router := handler.Router(
 		tokenManager,
-		handler.NewAuthHandler(authSvc, refreshTTL),
+		handler.NewAuthHandler(authSvc, oauthSvc, refreshTTL),
 		handler.NewCharacterHandler(characterSvc, cfg.UploadDir),
 		handler.NewLocationHandler(locationSvc, cfg.UploadDir),
 		handler.NewSceneHandler(sceneSvc),

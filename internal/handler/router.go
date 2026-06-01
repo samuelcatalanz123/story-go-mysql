@@ -26,6 +26,7 @@ func Router(
 	mux.HandleFunc("POST /auth/login", authH.Login)
 	mux.HandleFunc("POST /auth/refresh", authH.Refresh)
 	mux.HandleFunc("POST /auth/logout", authH.Logout)
+	mux.HandleFunc("POST /auth/oauth/google", authH.OAuthGoogle)
 
 	// Uploaded files served statically (public, read-only).
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadDir))))

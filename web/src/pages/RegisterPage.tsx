@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthForm } from "../components/AuthForm";
+import { GoogleButton } from "../components/GoogleButton";
 import { register } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../ui/Toast";
@@ -34,7 +35,14 @@ export function RegisterPage() {
       onSubmit={handleSubmit}
       submitting={submitting}
       error={error}
-      footer={<>¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link></>}
+      footer={
+        <>
+          <div style={{ marginBottom: "var(--space-4)" }}>
+            <GoogleButton />
+          </div>
+          ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
+        </>
+      }
     />
   );
 }

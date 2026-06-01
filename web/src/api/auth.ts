@@ -6,3 +6,9 @@ export const register = (body: RegisterRequest) =>
 
 export const login = (body: LoginRequest) =>
   apiFetch<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(body) });
+
+export const oauthGoogle = (code: string, codeVerifier: string) =>
+  apiFetch<AuthResponse>("/auth/oauth/google", {
+    method: "POST",
+    body: JSON.stringify({ code, codeVerifier }),
+  });

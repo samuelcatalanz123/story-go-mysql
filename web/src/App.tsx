@@ -10,6 +10,7 @@ import { OrganizationsPage } from "./pages/OrganizationsPage";
 import { ConflictsPage } from "./pages/ConflictsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { OAuthCallbackPage } from "./pages/OAuthCallbackPage";
 import { NotFound } from "./pages/NotFound";
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/auth/oauth/callback" element={<OAuthCallbackPage />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Navigate to="/characters" replace />} />
         <Route path="characters" element={<CharactersPage />} />

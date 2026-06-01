@@ -120,11 +120,16 @@ func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 	return s.refresh.Revoke(ctx, hashToken(refreshToken))
 }
 
-// issue creates an access token and a new refresh token for the user, storing
-// the refresh token's hash. It returns the AuthResponse and the plaintext
-// refresh token (only ever returned here, never stored).
+// issue creates an access token and a new refresh token for the user.
 func (s *AuthService) issue(ctx context.Context, user model.User) (model.AuthResponse, string, error) {
-	access, err := s.tokens.Issue(user.ID, time.Now())
+	return issueTokens(ctx, s.tokens, s.refresh, s.refreshTTL, user)
+}
+
+// issueTokens creates an access token and a new (stored, hashed) refresh token
+// for the user. It is shared by AuthService and OAuthService. It returns the
+// AuthResponse and the plaintext refresh token (never stored).
+func issueTokens(ctx context.Context, tokens *auth.TokenManager, refresh refreshStore, refreshTTL time.Duration, user model.User) (model.AuthResponse, string, error) {
+	access, err := tokens.Issue(user.ID, time.Now())
 	if err != nil {
 		return model.AuthResponse{}, "", err
 	}
@@ -132,7 +137,7 @@ func (s *AuthService) issue(ctx context.Context, user model.User) (model.AuthRes
 	if err != nil {
 		return model.AuthResponse{}, "", err
 	}
-	if err := s.refresh.Create(ctx, user.ID, hash, time.Now().Add(s.refreshTTL)); err != nil {
+	if err := refresh.Create(ctx, user.ID, hash, time.Now().Add(refreshTTL)); err != nil {
 		return model.AuthResponse{}, "", err
 	}
 	return model.AuthResponse{Token: access, User: user}, plaintext, nil

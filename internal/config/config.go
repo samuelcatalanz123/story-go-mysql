@@ -18,6 +18,15 @@ type Config struct {
 	UploadDir  string
 	JWTSecret  string
 	DB         DBConfig
+	Google     GoogleConfig
+}
+
+// GoogleConfig holds the "Sign in with Google" OAuth credentials. When
+// ClientID is empty, Google login is disabled (the server still runs).
+type GoogleConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
 }
 
 // UsesInsecureJWTSecret reports whether JWT_SECRET was left at the public
@@ -58,6 +67,11 @@ func Load() Config {
 			Host:     env("DB_HOST", "127.0.0.1"),
 			Port:     env("DB_PORT", "3306"),
 			Name:     env("DB_NAME", "story_go_db"),
+		},
+		Google: GoogleConfig{
+			ClientID:     env("GOOGLE_CLIENT_ID", ""),
+			ClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
+			RedirectURI:  env("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/oauth/callback"),
 		},
 	}
 }

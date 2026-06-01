@@ -1,2 +1,6 @@
 # Archivos subidos por usuarios (no van en el repositorio)
 /uploads/
+
+# Secretos: nunca subir los .env reales (sí los .env.example)
+.env
+web/.env

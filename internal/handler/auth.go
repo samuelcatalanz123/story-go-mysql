@@ -20,16 +20,17 @@ const (
 	refreshCookiePath = "/api/auth"
 )
 
-// AuthHandler exposes the registration, login, refresh and logout endpoints.
+// AuthHandler exposes registration, login, refresh, logout and Google OAuth.
 type AuthHandler struct {
 	svc        *service.AuthService
+	oauth      *service.OAuthService
 	refreshTTL time.Duration
 }
 
-// NewAuthHandler wires an AuthHandler to its service and the refresh-token
+// NewAuthHandler wires an AuthHandler to its services and the refresh-token
 // lifetime (used for the cookie's Max-Age).
-func NewAuthHandler(svc *service.AuthService, refreshTTL time.Duration) *AuthHandler {
-	return &AuthHandler{svc: svc, refreshTTL: refreshTTL}
+func NewAuthHandler(svc *service.AuthService, oauth *service.OAuthService, refreshTTL time.Duration) *AuthHandler {
+	return &AuthHandler{svc: svc, oauth: oauth, refreshTTL: refreshTTL}
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +72,27 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res, refresh, err := h.svc.Refresh(r.Context(), cookie.Value)
+	if err != nil {
+		web.RespondError(w, authResource, err)
+		return
+	}
+	h.setRefreshCookie(w, r, refresh)
+	web.JSON(w, http.StatusOK, res)
+}
+
+// OAuthGoogle handles POST /auth/oauth/google with {code, codeVerifier} from
+// the frontend's PKCE flow. On success it sets the refresh cookie and returns
+// an access token, exactly like login.
+func (h *AuthHandler) OAuthGoogle(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Code         string `json:"code"`
+		CodeVerifier string `json:"codeVerifier"`
+	}
+	if err := web.Decode(r, &req); err != nil {
+		web.RespondError(w, authResource, err)
+		return
+	}
+	res, refresh, err := h.oauth.LoginWithGoogle(r.Context(), req.Code, req.CodeVerifier)
 	if err != nil {
 		web.RespondError(w, authResource, err)
 		return

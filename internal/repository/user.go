@@ -43,17 +43,39 @@ func (r *UserRepository) Create(ctx context.Context, email, passwordHash string)
 }
 
 // GetByEmail returns the user and its password hash for login verification.
-// Returns apperror.ErrNotFound when no user matches.
+// Returns apperror.ErrNotFound when no user matches. OAuth-only users have a
+// NULL password hash, which COALESCE turns into "" (so password login fails).
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (model.User, string, error) {
 	var u model.User
 	var hash string
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, email, password_hash, created_at FROM users WHERE email = ?
+		SELECT id, email, COALESCE(password_hash, ''), created_at FROM users WHERE email = ?
 	`, email).Scan(&u.ID, &u.Email, &hash, &u.CreatedAt)
 	if err != nil {
 		return model.User{}, "", translate(err)
 	}
 	return u, hash, nil
+}
+
+// CreateOAuthUser creates a user that signs in only through an OAuth provider
+// (no password). Returns apperror.ErrDuplicateEmail if the email already exists.
+func (r *UserRepository) CreateOAuthUser(ctx context.Context, email string) (model.User, error) {
+	result, err := r.db.ExecContext(ctx,
+		"INSERT INTO users (email, password_hash) VALUES (?, NULL)",
+		email,
+	)
+	if err != nil {
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == mysqlDuplicateEntry {
+			return model.User{}, apperror.ErrDuplicateEmail
+		}
+		return model.User{}, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return model.User{}, err
+	}
+	return r.getByID(ctx, uint64(id))
 }
 
 // GetByID returns the user with the given ID (without the password hash).

@@ -1,10 +1,30 @@
 // Tipos que reflejan los modelos JSON de la API de Go.
 // En Go los campos *string (anulables) se representan como string | null.
 
+export type Organization = {
+  id: number;
+  title: string;
+  text: string | null;
+  storyId: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Conflict = {
+  id: number;
+  title: string;
+  text: string | null;
+  sceneId: number | null;
+  storyId: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Character = {
   id: number;
   title: string;
   text: string | null;
+  organizations?: Organization[];
   createdAt: string;
   updatedAt: string;
 };
@@ -29,8 +49,10 @@ export type Scene = {
   updatedAt: string;
 };
 
-export type CharacterRequest = { title: string; text: string | null };
+export type CharacterRequest = { title: string; text: string | null; organizationIds: number[] };
 export type LocationRequest = { title: string; text: string | null };
+export type OrganizationRequest = { title: string; text: string | null };
+export type ConflictRequest = { title: string; text: string | null };
 export type SceneRequest = {
   title: string;
   text: string | null;

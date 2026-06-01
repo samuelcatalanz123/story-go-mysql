@@ -6,6 +6,8 @@ import { LocationsPage } from "./pages/LocationsPage";
 import { LocationDetailPage } from "./pages/LocationDetailPage";
 import { ScenesPage } from "./pages/ScenesPage";
 import { SceneDetailPage } from "./pages/SceneDetailPage";
+import { OrganizationsPage } from "./pages/OrganizationsPage";
+import { ConflictsPage } from "./pages/ConflictsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { NotFound } from "./pages/NotFound";
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="locations/:id" element={<LocationDetailPage />} />
         <Route path="scenes" element={<ScenesPage />} />
         <Route path="scenes/:id" element={<SceneDetailPage />} />
+        <Route path="organizations" element={<OrganizationsPage />} />
+        <Route path="conflicts" element={<ConflictsPage />} />
         {/* Ruta comodín: cualquier URL que no coincida arriba cae aquí (404). */}
         <Route path="*" element={<NotFound />} />
       </Route>

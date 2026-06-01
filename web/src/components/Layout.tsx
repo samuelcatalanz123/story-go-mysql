@@ -28,10 +28,29 @@ function FilmIcon() {
   );
 }
 
+function UsersIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2 20c0-3.5 3.5-5 7-5s7 1.5 7 5" />
+      <path d="M16 5a3.5 3.5 0 0 1 0 7M22 20c0-3-2-4.5-5-5" />
+    </svg>
+  );
+}
+function BoltIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
+    </svg>
+  );
+}
+
 const links = [
   { to: "/characters", label: "Personajes", icon: <UserIcon /> },
   { to: "/locations", label: "Lugares", icon: <PinIcon /> },
   { to: "/scenes", label: "Escenas", icon: <FilmIcon /> },
+  { to: "/organizations", label: "Organizaciones", icon: <UsersIcon /> },
+  { to: "/conflicts", label: "Conflictos", icon: <BoltIcon /> },
 ];
 
 export function Layout() {

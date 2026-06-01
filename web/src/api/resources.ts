@@ -3,9 +3,13 @@ import type {
   Character,
   Location,
   Scene,
+  Organization,
+  Conflict,
   CharacterRequest,
   LocationRequest,
   SceneRequest,
+  OrganizationRequest,
+  ConflictRequest,
   Paged,
 } from "../types";
 
@@ -55,6 +59,30 @@ export const updateScene = (id: number, body: SceneRequest) =>
 export const deleteScene = (id: number) =>
   apiFetch<void>(`/scenes/${id}`, { method: "DELETE" });
 
+// --- Organizaciones ---
+export const listOrganizations = (args: ListArgs) =>
+  apiFetch<Paged<Organization>>(`/organizations?${listQuery(args)}`);
+export const getOrganization = (id: number) =>
+  apiFetch<Organization>(`/organizations/${id}`);
+export const createOrganization = (body: OrganizationRequest) =>
+  apiFetch<Organization>("/organizations", { method: "POST", body: JSON.stringify(body) });
+export const updateOrganization = (id: number, body: OrganizationRequest) =>
+  apiFetch<Organization>(`/organizations/${id}`, { method: "PUT", body: JSON.stringify(body) });
+export const deleteOrganization = (id: number) =>
+  apiFetch<void>(`/organizations/${id}`, { method: "DELETE" });
+
+// --- Conflictos ---
+export const listConflicts = (args: ListArgs) =>
+  apiFetch<Paged<Conflict>>(`/conflicts?${listQuery(args)}`);
+export const getConflict = (id: number) =>
+  apiFetch<Conflict>(`/conflicts/${id}`);
+export const createConflict = (body: ConflictRequest) =>
+  apiFetch<Conflict>("/conflicts", { method: "POST", body: JSON.stringify(body) });
+export const updateConflict = (id: number, body: ConflictRequest) =>
+  apiFetch<Conflict>(`/conflicts/${id}`, { method: "PUT", body: JSON.stringify(body) });
+export const deleteConflict = (id: number) =>
+  apiFetch<void>(`/conflicts/${id}`, { method: "DELETE" });
+
 // Helpers que traen TODOS los elementos (para los desplegables del formulario
 // de escenas). El backend limita pageSize a 100, así que paginamos hasta
 // agotar el total en vez de pedir una sola página enorme.
@@ -73,3 +101,4 @@ async function fetchAll<T>(loader: (args: ListArgs) => Promise<Paged<T>>): Promi
 
 export const listAllCharacters = () => fetchAll(listCharacters);
 export const listAllLocations = () => fetchAll(listLocations);
+export const listAllOrganizations = () => fetchAll(listOrganizations);

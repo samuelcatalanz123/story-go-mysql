@@ -11,6 +11,8 @@ import { ConflictsPage } from "./pages/ConflictsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { OAuthCallbackPage } from "./pages/OAuthCallbackPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { NotFound } from "./pages/NotFound";
 
 export default function App() {
@@ -19,6 +21,8 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/auth/oauth/callback" element={<OAuthCallbackPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<Navigate to="/characters" replace />} />
         <Route path="characters" element={<CharactersPage />} />

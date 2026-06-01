@@ -12,3 +12,17 @@ export const oauthGoogle = (code: string, codeVerifier: string) =>
     method: "POST",
     body: JSON.stringify({ code, codeVerifier }),
   });
+
+type MessageResponse = { message: string };
+
+export const forgotPassword = (email: string) =>
+  apiFetch<MessageResponse>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+
+export const resetPassword = (token: string, newPassword: string) =>
+  apiFetch<MessageResponse>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, newPassword }),
+  });

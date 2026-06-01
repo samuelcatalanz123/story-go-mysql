@@ -19,6 +19,16 @@ type Config struct {
 	JWTSecret  string
 	DB         DBConfig
 	Google     GoogleConfig
+	AppBaseURL string
+	SMTP       SMTPConfig
+}
+
+// SMTPConfig holds the email server settings. When Host is empty, emails are
+// just logged (development) instead of sent.
+type SMTPConfig struct {
+	Host string
+	Port string
+	From string
 }
 
 // GoogleConfig holds the "Sign in with Google" OAuth credentials. When
@@ -72,6 +82,12 @@ func Load() Config {
 			ClientID:     env("GOOGLE_CLIENT_ID", ""),
 			ClientSecret: env("GOOGLE_CLIENT_SECRET", ""),
 			RedirectURI:  env("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/oauth/callback"),
+		},
+		AppBaseURL: env("APP_BASE_URL", "http://localhost:8090"),
+		SMTP: SMTPConfig{
+			Host: env("SMTP_HOST", ""),
+			Port: env("SMTP_PORT", "1025"),
+			From: env("SMTP_FROM", "no-reply@story.local"),
 		},
 	}
 }

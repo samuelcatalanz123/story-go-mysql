@@ -40,6 +40,9 @@ export function LoginPage() {
           <div style={{ marginBottom: "var(--space-4)" }}>
             <GoogleButton />
           </div>
+          <div style={{ marginBottom: "var(--space-2)" }}>
+            <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
+          </div>
           ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
         </>
       }

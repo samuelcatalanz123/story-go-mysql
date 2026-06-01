@@ -83,6 +83,17 @@ func (r *UserRepository) GetByID(ctx context.Context, id uint64) (model.User, er
 	return r.getByID(ctx, id)
 }
 
+// UpdatePassword sets a new password hash for a user, returning
+// apperror.ErrNotFound when the user does not exist.
+func (r *UserRepository) UpdatePassword(ctx context.Context, id uint64, passwordHash string) error {
+	result, err := r.db.ExecContext(ctx,
+		"UPDATE users SET password_hash = ? WHERE id = ?", passwordHash, id)
+	if err != nil {
+		return translate(err)
+	}
+	return requireAffected(result)
+}
+
 func (r *UserRepository) getByID(ctx context.Context, id uint64) (model.User, error) {
 	var u model.User
 	err := r.db.QueryRowContext(ctx, `

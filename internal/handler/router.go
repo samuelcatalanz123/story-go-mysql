@@ -11,6 +11,7 @@ import (
 func Router(
 	tokens *auth.TokenManager,
 	authH *AuthHandler,
+	passwordH *PasswordHandler,
 	characters *CharacterHandler,
 	locations *LocationHandler,
 	scenes *SceneHandler,
@@ -27,6 +28,8 @@ func Router(
 	mux.HandleFunc("POST /auth/refresh", authH.Refresh)
 	mux.HandleFunc("POST /auth/logout", authH.Logout)
 	mux.HandleFunc("POST /auth/oauth/google", authH.OAuthGoogle)
+	mux.HandleFunc("POST /auth/forgot-password", passwordH.Forgot)
+	mux.HandleFunc("POST /auth/reset-password", passwordH.Reset)
 
 	// Uploaded files served statically (public, read-only).
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadDir))))

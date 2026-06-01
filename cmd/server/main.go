@@ -15,6 +15,7 @@ import (
 
 	"story-go-mysql/internal/auth"
 	"story-go-mysql/internal/config"
+	"story-go-mysql/internal/email"
 	"story-go-mysql/internal/handler"
 	"story-go-mysql/internal/oauth"
 	"story-go-mysql/internal/repository"
@@ -64,6 +65,7 @@ func run() error {
 	conflictRepo := repository.NewConflictRepository(db)
 	refreshRepo := repository.NewRefreshTokenRepository(db)
 	oauthRepo := repository.NewOAuthAccountRepository(db)
+	passwordResetRepo := repository.NewPasswordResetRepository(db)
 
 	// Services (business logic).
 	characterSvc := service.NewCharacterService(characterRepo, organizationRepo)
@@ -101,10 +103,21 @@ func run() error {
 		oauthSvc = service.NewOAuthService(userRepo, oauthRepo, nil, tokenManager, refreshRepo, refreshTTL)
 	}
 
+	// Email sender: log-only in development, real SMTP when SMTP_HOST is set.
+	var mailer email.Sender = email.LogSender{}
+	if cfg.SMTP.Host != "" {
+		mailer = email.SMTPSender{Addr: cfg.SMTP.Host + ":" + cfg.SMTP.Port, From: cfg.SMTP.From}
+		slog.Info("email via SMTP", "addr", cfg.SMTP.Host+":"+cfg.SMTP.Port)
+	} else {
+		slog.Info("email disabled (logging only; set SMTP_HOST to send)")
+	}
+	passwordResetSvc := service.NewPasswordResetService(userRepo, passwordResetRepo, mailer, cfg.AppBaseURL, time.Hour)
+
 	// Handlers (HTTP) and router.
 	router := handler.Router(
 		tokenManager,
 		handler.NewAuthHandler(authSvc, oauthSvc, refreshTTL),
+		handler.NewPasswordHandler(passwordResetSvc),
 		handler.NewCharacterHandler(characterSvc, cfg.UploadDir),
 		handler.NewLocationHandler(locationSvc, cfg.UploadDir),
 		handler.NewSceneHandler(sceneSvc),

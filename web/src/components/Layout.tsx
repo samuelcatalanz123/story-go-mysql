@@ -51,6 +51,7 @@ const links = [
   { to: "/scenes", label: "Escenas", icon: <FilmIcon /> },
   { to: "/organizations", label: "Organizaciones", icon: <UsersIcon /> },
   { to: "/conflicts", label: "Conflictos", icon: <BoltIcon /> },
+  { to: "/graphql-demo", label: "GraphQL", icon: <BoltIcon /> },
 ];
 
 export function Layout() {

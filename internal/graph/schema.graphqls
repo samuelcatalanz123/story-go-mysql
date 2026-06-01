@@ -1,0 +1,41 @@
+# Schema GraphQL — contrato de la API. gqlgen genera el código a partir de esto.
+# Vive JUNTO al REST (no lo reemplaza), para comparar los dos estilos.
+
+type Character {
+  id: ID!
+  title: String!
+  text: String
+}
+
+type Location {
+  id: ID!
+  title: String!
+  text: String
+}
+
+type Scene {
+  id: ID!
+  title: String!
+  text: String
+  startTimeline: Int!
+  endTimeline: Int!
+  # Las escenas ya traen sus personajes y lugares (el SceneService los carga),
+  # así no hace falta un dataloader para este caso.
+  characters: [Character!]!
+  locations: [Location!]!
+}
+
+input CharacterInput {
+  title: String!
+  text: String
+}
+
+type Query {
+  characters: [Character!]!
+  character(id: ID!): Character
+  scenes: [Scene!]!
+}
+
+type Mutation {
+  createCharacter(input: CharacterInput!): Character!
+}

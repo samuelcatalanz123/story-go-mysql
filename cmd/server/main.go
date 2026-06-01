@@ -13,10 +13,14 @@ import (
 	"syscall"
 	"time"
 
+	gqlhandler "github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+
 	"story-go-mysql/internal/auth"
 	"story-go-mysql/internal/cache"
 	"story-go-mysql/internal/config"
 	"story-go-mysql/internal/email"
+	"story-go-mysql/internal/graph"
 	"story-go-mysql/internal/handler"
 	"story-go-mysql/internal/oauth"
 	"story-go-mysql/internal/repository"
@@ -125,6 +129,12 @@ func run() error {
 	}
 	passwordResetSvc := service.NewPasswordResetService(userRepo, passwordResetRepo, mailer, cfg.AppBaseURL, time.Hour)
 
+	// GraphQL: misma lógica (servicios) que el REST, expuesta en /graphql,
+	// con un playground interactivo en /playground.
+	gqlResolver := &graph.Resolver{CharacterSvc: characterSvc, SceneSvc: sceneSvc}
+	gqlSrv := gqlhandler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: gqlResolver}))
+	pgSrv := playground.Handler("Story GraphQL", "/api/graphql")
+
 	// Handlers (HTTP) and router.
 	router := handler.Router(
 		tokenManager,
@@ -138,6 +148,8 @@ func run() error {
 		handler.NewConflictHandler(conflictSvc),
 		cfg.UploadDir,
 		appCache,
+		gqlSrv,
+		pgSrv,
 	)
 
 	// El binario sirve la API en /api/* y el frontend compilado en el resto.

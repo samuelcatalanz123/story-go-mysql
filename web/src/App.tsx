@@ -8,6 +8,7 @@ import { ScenesPage } from "./pages/ScenesPage";
 import { SceneDetailPage } from "./pages/SceneDetailPage";
 import { OrganizationsPage } from "./pages/OrganizationsPage";
 import { ConflictsPage } from "./pages/ConflictsPage";
+import { GraphQLDemoPage } from "./pages/GraphQLDemoPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { OAuthCallbackPage } from "./pages/OAuthCallbackPage";
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="scenes/:id" element={<SceneDetailPage />} />
         <Route path="organizations" element={<OrganizationsPage />} />
         <Route path="conflicts" element={<ConflictsPage />} />
+        <Route path="graphql-demo" element={<GraphQLDemoPage />} />
         {/* Ruta comodín: cualquier URL que no coincida arriba cae aquí (404). */}
         <Route path="*" element={<NotFound />} />
       </Route>

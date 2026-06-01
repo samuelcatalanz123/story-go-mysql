@@ -22,6 +22,8 @@ func Router(
 	conflicts *ConflictHandler,
 	uploadDir string,
 	c cache.Cache,
+	graphqlSrv http.Handler,
+	playgroundSrv http.Handler,
 ) http.Handler {
 	mux := http.NewServeMux()
 
@@ -40,6 +42,11 @@ func Router(
 	authPost("POST /auth/oauth/google", authH.OAuthGoogle)
 	authPost("POST /auth/forgot-password", passwordH.Forgot)
 	authPost("POST /auth/reset-password", passwordH.Reset)
+
+	// GraphQL: un solo endpoint para queries/mutaciones, junto al REST.
+	// El playground (GraphiQL) es para explorar el API de forma interactiva.
+	mux.Handle("/graphql", graphqlSrv)
+	mux.Handle("GET /playground", playgroundSrv)
 
 	// Uploaded files served statically (public, read-only).
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads", http.FileServer(http.Dir(uploadDir))))
